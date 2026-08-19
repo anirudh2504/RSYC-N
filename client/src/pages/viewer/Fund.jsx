@@ -1,0 +1,167 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useFetch } from '../../context/Session.jsx';
+import { Jali, Icon } from '../../components/Ornaments.jsx';
+import { Card, CardHead, ErrorState, Loading, Progress, Rule } from '../../components/ui.jsx';
+import LedgerRow from '../../components/LedgerRow.jsx';
+import { money, moneyShort, periodLabelLong } from '../../lib/format.js';
+
+export default function Fund() {
+  const { data, loading, error, reload } = useFetch('/view/summary');
+  const [copied, setCopied] = useState(false);
+
+  const copy = (text) => {
+    if (!text || !navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      },
+      () => {},
+    );
+  };
+
+  if (loading) return <Loading rows={4} />;
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (!data) return null;
+
+  const { collection } = data;
+  const upiLink = data.upiId
+    ? `upi://pay?pa=${encodeURIComponent(data.upiId)}&pn=${encodeURIComponent('Rav Shekha Ji Yuva Club')}&cu=INR`
+    : null;
+
+  return (
+    <>
+      <section className="balance">
+        <Jali className="balance-jali" />
+        <div className="balance-body">
+          <p className="balance-label">Club fund balance</p>
+          <p className="balance-figure num">{money(data.balancePaise)}</p>
+          <p className="balance-note">
+            {moneyShort(data.balancePaise)} &middot; as of today &middot; {data.memberCount} members
+          </p>
+
+          <dl className="balance-split">
+            <div>
+              <dt>In this month</dt>
+              <dd className="num in-figure">{money(data.month.creditPaise)}</dd>
+            </div>
+            <div>
+              <dt>Out this month</dt>
+              <dd className="num out-figure">{money(data.month.debitPaise)}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {data.notice ? (
+        <div className="notice-box notice-warn" style={{ marginTop: 14 }}>
+          {data.notice}
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 16 }}>
+        <Card className="card-pad">
+          <div className="row-between" style={{ marginBottom: 8 }}>
+            <div>
+              <p style={{ fontWeight: 700 }}>{periodLabelLong(data.period)} collection</p>
+              <p className="small muted">
+                {collection.paidCount} of {collection.payableCount} members paid
+              </p>
+            </div>
+            <p className="num" style={{ fontWeight: 700, textAlign: 'right' }}>
+              {money(collection.collectedPaise)}
+              <span className="small muted" style={{ display: 'block', fontWeight: 400 }}>
+                of {money(collection.expectedPaise)}
+              </span>
+            </p>
+          </div>
+          <Progress value={collection.collectedPaise} max={collection.expectedPaise} />
+          <Link to="/fund/collection" className="small" style={{ display: 'inline-block', marginTop: 10 }}>
+            See who has paid →
+          </Link>
+        </Card>
+      </div>
+
+      <div style={{ margin: '24px 0 12px' }}>
+        <Rule label="Recent activity" />
+      </div>
+
+      <Card>
+        <CardHead
+          title="Latest entries"
+          action={
+            <Link to="/fund/transactions" className="small">
+              See all
+            </Link>
+          }
+        />
+        {data.recent.length === 0 ? (
+          <div className="card-pad">
+            <p className="muted small">Nothing recorded yet.</p>
+          </div>
+        ) : (
+          data.recent.map((entry) => <LedgerRow key={entry.id} entry={entry} />)
+        )}
+      </Card>
+
+      {data.upiId || data.paymentPhone ? (
+        <>
+          <div style={{ margin: '24px 0 12px' }}>
+            <Rule label="Paying your contribution" />
+          </div>
+          <Card className="card-pad">
+            {data.upiId ? (
+              <dl className="kv">
+                <dt>UPI ID</dt>
+                <dd className="num">{data.upiId}</dd>
+              </dl>
+            ) : null}
+
+            {data.paymentPhone ? (
+              <dl className="kv">
+                <dt>Phone number</dt>
+                <dd className="num">{data.paymentPhone}</dd>
+              </dl>
+            ) : null}
+
+            <div className="btn-row" style={{ marginTop: 14 }}>
+              {data.upiId ? (
+                <a href={upiLink} className="btn btn-saffron">
+                  <Icon.phone />
+                  Pay by UPI
+                </a>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => copy(data.upiId || data.paymentPhone)}
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+
+            {/* The step everyone forgets, said plainly. */}
+            <div className="notice-box notice-info" style={{ marginTop: 14 }}>
+              <strong>After you pay, send the screenshot to the club WhatsApp group.</strong> An
+              admin records it against your name from there.
+            </div>
+
+            {data.whatsappGroupUrl ? (
+              <a
+                href={data.whatsappGroupUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-ghost btn-block"
+                style={{ marginTop: 10 }}
+              >
+                <Icon.whatsapp />
+                Open the club WhatsApp group
+              </a>
+            ) : null}
+          </Card>
+        </>
+      ) : null}
+    </>
+  );
+}
