@@ -24,7 +24,11 @@ function TopBar({ onMenu }) {
           <Logo className="brand-mark" />
           <span className="brand-text">
             <span className="brand-name">{CLUB}</span>
-            <span className="brand-sub">{VILLAGE}</span>
+            <span className="brand-sub">
+              {/* a small brass lozenge, then breathing room, then the village */}
+              <i className="brand-dot" aria-hidden="true" />
+              {VILLAGE}
+            </span>
           </span>
         </Link>
         <button

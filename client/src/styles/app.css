@@ -69,35 +69,59 @@
    Top bar — carries the cusped arch motif of a haveli jharokha
    ========================================================================== */
 
+/*
+ * The header carries the whole app's identity, so it is the one place given a
+ * little depth: a warm glow off the top-left corner as if a lamp were sitting
+ * beside it, a faint jali screen across the field, and a brass rule beneath.
+ */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: var(--royal);
   color: #fdf6e8;
   padding-top: env(safe-area-inset-top, 0px);
-  box-shadow: var(--shadow-sm);
+  background:
+    radial-gradient(130% 200% at 8% -60%, rgba(224, 145, 42, 0.32), transparent 58%),
+    linear-gradient(180deg, #26387f 0%, #1d2c6f 52%, #16215a 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.18),
+    0 8px 22px -14px rgba(20, 16, 8, 0.75);
+}
+
+/* the pierced screen, barely there */
+.topbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.09;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M15 1l14 14-14 14L1 15z' fill='none' stroke='%23f6d78a' stroke-width='.9'/%3E%3Ccircle cx='15' cy='15' r='1.6' fill='%23f6d78a'/%3E%3C/svg%3E");
+  background-size: 30px 30px;
 }
 
 .topbar::after {
   content: '';
   display: block;
+  position: relative;
   height: 3px;
   background: linear-gradient(
     90deg,
     var(--saffron) 0%,
-    var(--brass) 22%,
-    var(--saffron) 50%,
-    var(--brass) 78%,
+    #f6d78a 18%,
+    var(--brass) 34%,
+    #f6d78a 50%,
+    var(--brass) 66%,
+    #f6d78a 82%,
     var(--saffron) 100%
   );
 }
 
 .topbar-inner {
+  position: relative;
   max-width: var(--page-max);
   margin: 0 auto;
   min-height: var(--header-h);
-  padding: 8px var(--gutter);
+  padding: 9px var(--gutter);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -114,8 +138,12 @@
 
 .brand-mark {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  box-shadow:
+    0 0 0 1px rgba(246, 215, 138, 0.5),
+    0 2px 8px -2px rgba(8, 10, 30, 0.6);
 }
 
 /*
@@ -130,8 +158,9 @@
 }
 
 .brand-mark.logo-img {
-  border-radius: 7px;
-  background: rgba(253, 246, 232, 0.12);
+  border-radius: 9px;
+  background: rgba(253, 246, 232, 0.14);
+  padding: 2px;
 }
 
 .brand-text {
@@ -140,22 +169,38 @@
 
 .brand-name {
   font-family: var(--display);
-  font-size: 1.0625rem;
-  line-height: 1.15;
+  font-size: 1.125rem;
+  line-height: 1.12;
+  letter-spacing: 0.012em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #fdf6e8;
+  text-shadow: 0 1px 2px rgba(10, 14, 40, 0.4);
 }
 
 .brand-sub {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 3px;
   font-size: 0.6875rem;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.19em;
   text-transform: uppercase;
-  color: rgba(253, 246, 232, 0.62);
+  font-weight: 600;
+  color: rgba(246, 215, 138, 0.88);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* the lozenge that sets the village name apart from the club name */
+.brand-dot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  transform: rotate(45deg);
+  background: var(--saffron);
+  box-shadow: 0 0 0 1px rgba(246, 215, 138, 0.45);
 }
 
 .topbar-btn {
@@ -168,14 +213,21 @@
   gap: 6px;
   padding: 0 10px;
   border-radius: var(--r-sm);
-  color: rgba(253, 246, 232, 0.9);
+  color: rgba(253, 246, 232, 0.92);
   font-size: var(--t-sm);
   font-weight: 500;
   background: rgba(253, 246, 232, 0.1);
+  border: 1px solid rgba(246, 215, 138, 0.22);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.topbar-btn:hover {
+  background: rgba(253, 246, 232, 0.16);
+  border-color: rgba(246, 215, 138, 0.45);
 }
 
 .topbar-btn:active {
-  background: rgba(253, 246, 232, 0.2);
+  background: rgba(253, 246, 232, 0.24);
 }
 
 .back-link {
