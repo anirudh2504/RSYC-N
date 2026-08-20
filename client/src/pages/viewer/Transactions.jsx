@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
 import { Button, Card, CardHead, Empty, ErrorState, Loading, PageHead } from '../../components/ui.jsx';
+import { BackLink } from '../../components/Layout.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
 import { money, periodLabel, currentPeriod } from '../../lib/format.js';
 
@@ -79,6 +80,9 @@ export default function Transactions() {
 
   return (
     <>
+      {/* This page is no longer a tab, so it carries its own way back. */}
+      <BackLink to="/fund">Club fund</BackLink>
+
       <PageHead
         eyebrow="Club fund"
         title="Every transaction"

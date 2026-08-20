@@ -114,10 +114,12 @@ export function PublicLayout({ children }) {
   };
 
   // About, Members, Join, Events — in that order, everywhere.
+  // The ledger is deliberately not a tab: it is reached from "See all" on the
+  // fund page, and from the menu in the top bar.
   const navItems = session.viewer
     ? [
-        { to: '/fund', end: true, icon: <Icon.home />, label: 'Fund' },
-        { to: '/fund/transactions', icon: <Icon.ledger />, label: 'Transactions', short: 'Ledger' },
+        { to: '/', end: true, icon: <Icon.home />, label: 'About the club', short: 'About' },
+        { to: '/fund', end: true, icon: <Icon.scale />, label: 'Fund' },
         { to: '/fund/members', icon: <Icon.people />, label: 'Members' },
         {
           to: '/fund/collection',
@@ -135,26 +137,40 @@ export function PublicLayout({ children }) {
         { to: '/unlock', icon: <Icon.lock />, label: 'Club fund', short: 'Fund' },
       ];
 
+  /**
+   * The menu only carries what the tab bar does not. Offering the same page in
+   * both places is clutter, and this filter keeps them in step on its own if
+   * the tabs ever change again.
+   */
+  const navPaths = new Set(navItems.map((item) => item.to));
+  const alreadyInTabs = (item) =>
+    navPaths.has(item.to) || (item.sameAs || []).some((path) => navPaths.has(path));
+
+  const extraItems = [
+    { to: '/', icon: <Icon.home />, label: 'About the club' },
+    // To a reader the public board and the members directory are one thing, so
+    // once the directory is a tab this drops out too.
+    { to: '/members', icon: <Icon.people />, label: 'Members board', sameAs: ['/fund/members'] },
+    { to: '/join', icon: <Icon.inbox />, label: 'Join the club' },
+    { to: '/events', icon: <Icon.calendar />, label: 'Events' },
+    ...(session.viewer
+      ? [{ to: '/fund/transactions', icon: <Icon.ledger />, label: 'All transactions' }]
+      : []),
+  ].filter((item) => !alreadyInTabs(item));
+
+  const accountItems = [
+    session.isAdmin
+      ? { to: '/admin', icon: <Icon.shield />, label: 'Admin area' }
+      : { to: '/login', icon: <Icon.shield />, label: 'Admin sign in' },
+    ...(session.viewer || session.isAdmin
+      ? [{ icon: <Icon.logout />, label: 'Log out', danger: true, onClick: signOut }]
+      : []),
+  ];
+
   const sideGroups = [
     { items: navItems },
-    {
-      label: 'Club',
-      items: [
-        ...(session.viewer
-          ? [
-              { to: '/', end: true, icon: <Icon.home />, label: 'About the club' },
-              { to: '/members', icon: <Icon.people />, label: 'Members board' },
-              { to: '/join', icon: <Icon.inbox />, label: 'Join the club' },
-            ]
-          : []),
-        ...(session.isAdmin
-          ? [{ to: '/admin', icon: <Icon.shield />, label: 'Admin area' }]
-          : [{ to: '/login', icon: <Icon.shield />, label: 'Admin sign in' }]),
-        ...(session.viewer || session.isAdmin
-          ? [{ icon: <Icon.logout />, label: 'Log out', danger: true, onClick: signOut }]
-          : []),
-      ],
-    },
+    ...(extraItems.length ? [{ label: 'Club', items: extraItems }] : []),
+    { label: 'Account', items: accountItems },
   ];
 
   return (
@@ -169,12 +185,7 @@ export function PublicLayout({ children }) {
       <BottomNav items={navItems} />
 
       <Sheet open={menu} title="Menu" onClose={() => setMenu(false)}>
-        {[
-          { to: '/', icon: <Icon.home />, label: 'About the club' },
-          { to: '/members', icon: <Icon.people />, label: 'Members board' },
-          { to: '/join', icon: <Icon.inbox />, label: 'Join the club' },
-          { to: '/events', icon: <Icon.calendar />, label: 'Events' },
-        ].map((item) => (
+        {extraItems.map((item) => (
           <SheetItem
             key={item.to}
             icon={item.icon}
@@ -189,33 +200,22 @@ export function PublicLayout({ children }) {
 
         {/* Admin sign in lives here and nowhere else — never on the fund or
             unlock screens, which are for ordinary members. */}
-        {session.isAdmin ? (
+        {accountItems.map((item) => (
           <SheetItem
-            icon={<Icon.shield />}
-            onClick={() => {
-              setMenu(false);
-              navigate('/admin');
-            }}
+            key={item.to || item.label}
+            icon={item.icon}
+            danger={item.danger}
+            onClick={
+              item.onClick ||
+              (() => {
+                setMenu(false);
+                navigate(item.to);
+              })
+            }
           >
-            Admin area
+            {item.label}
           </SheetItem>
-        ) : (
-          <SheetItem
-            icon={<Icon.shield />}
-            onClick={() => {
-              setMenu(false);
-              navigate('/login');
-            }}
-          >
-            Admin sign in
-          </SheetItem>
-        )}
-
-        {session.viewer || session.isAdmin ? (
-          <SheetItem icon={<Icon.logout />} danger onClick={signOut}>
-            Log out
-          </SheetItem>
-        ) : null}
+        ))}
       </Sheet>
     </div>
   );
@@ -246,12 +246,15 @@ export function AdminLayout({ children }) {
     { to: '/admin/members', icon: <Icon.people />, label: 'Members', short: 'Members' },
   ];
 
+  // Same rule as the public side: nothing that is already a tab.
+  const navPaths = new Set(navItems.map((item) => item.to));
+
   const moreItems = [
     { to: '/admin/transactions', icon: <Icon.ledger />, label: 'All transactions' },
     { to: '/admin/pending', icon: <Icon.bell />, label: 'Pending & reminders' },
     { to: '/admin/events', icon: <Icon.calendar />, label: 'Manage events' },
     { to: '/admin/requests', icon: <Icon.inbox />, label: 'Join requests' },
-  ];
+  ].filter((item) => !navPaths.has(item.to));
 
   const masterItems = [
     { to: '/admin/adjust', icon: <Icon.scale />, label: 'Correct balance' },

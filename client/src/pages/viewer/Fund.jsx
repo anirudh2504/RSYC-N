@@ -2,23 +2,36 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFetch } from '../../context/Session.jsx';
 import { Jali, Icon } from '../../components/Ornaments.jsx';
-import { Card, CardHead, ErrorState, Loading, Progress, Rule } from '../../components/ui.jsx';
+import {
+  Card,
+  CardHead,
+  ErrorState,
+  Loading,
+  Progress,
+  Rule,
+  useToast,
+} from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
 import { money, moneyShort, periodLabelLong } from '../../lib/format.js';
+import { copyText, isMobileDevice } from '../../lib/device.js';
 
 export default function Fund() {
   const { data, loading, error, reload } = useFetch('/view/summary');
+  const toast = useToast();
   const [copied, setCopied] = useState(false);
 
-  const copy = (text) => {
-    if (!text || !navigator.clipboard) return;
-    navigator.clipboard.writeText(text).then(
-      () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1800);
-      },
-      () => {},
-    );
+  // A upi:// link only ever opens something on a phone.
+  const onMobile = isMobileDevice();
+
+  const copy = async (text) => {
+    const ok = await copyText(text);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } else {
+      // Never fail silently — tell them what to do instead.
+      toast('Could not copy. Press and hold the ID above to select it.', 'bad');
+    }
   };
 
   if (loading) return <Loading rows={4} />;
@@ -90,11 +103,7 @@ export default function Fund() {
       <Card>
         <CardHead
           title="Latest entries"
-          action={
-            <Link to="/fund/transactions" className="small">
-              See all
-            </Link>
-          }
+          action={<span className="small muted">last {data.recent.length}</span>}
         />
         {data.recent.length === 0 ? (
           <div className="card-pad">
@@ -103,6 +112,16 @@ export default function Fund() {
         ) : (
           data.recent.map((entry) => <LedgerRow key={entry.id} entry={entry} />)
         )}
+
+        {/* The main way into the ledger, now that it is not a tab. */}
+        {data.recent.length ? (
+          <div style={{ padding: 12, borderTop: '1px solid var(--line-soft)' }}>
+            <Link to="/fund/transactions" className="btn btn-soft btn-block btn-slim">
+              <Icon.ledger />
+              View all transactions
+            </Link>
+          </div>
+        ) : null}
       </Card>
 
       {data.upiId || data.paymentPhone ? (
@@ -125,8 +144,10 @@ export default function Fund() {
               </dl>
             ) : null}
 
+            {/* The UPI button only appears on a phone. On a laptop no app
+                handles upi://, so it would be a button that does nothing. */}
             <div className="btn-row" style={{ marginTop: 14 }}>
-              {data.upiId ? (
+              {data.upiId && onMobile ? (
                 <a href={upiLink} className="btn btn-saffron">
                   <Icon.phone />
                   Pay by UPI
@@ -134,12 +155,19 @@ export default function Fund() {
               ) : null}
               <button
                 type="button"
-                className="btn btn-ghost"
+                className={`btn ${data.upiId && onMobile ? 'btn-ghost' : 'btn-saffron btn-block'}`}
                 onClick={() => copy(data.upiId || data.paymentPhone)}
               >
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? 'Copied ✓' : `Copy ${data.upiId ? 'UPI ID' : 'number'}`}
               </button>
             </div>
+
+            {!onMobile ? (
+              <p className="hint" style={{ marginTop: 8 }}>
+                Open this page on your phone to pay straight from a UPI app, or copy the ID and
+                paste it there.
+              </p>
+            ) : null}
 
             {/* The step everyone forgets, said plainly. */}
             <div className="notice-box notice-info" style={{ marginTop: 14 }}>

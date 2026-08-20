@@ -1,13 +1,61 @@
 import { useState } from 'react';
 import { useFetch } from '../../context/Session.jsx';
-import { Icon } from '../../components/Ornaments.jsx';
-import { Card, CardHead, Empty, ErrorState, Loading, PageHead } from '../../components/ui.jsx';
-import { initials, money, periodLabel } from '../../lib/format.js';
+import { MemberAvatar, Icon } from '../../components/Ornaments.jsx';
+import { Empty, ErrorState, Loading, PageHead } from '../../components/ui.jsx';
+import { periodLabel } from '../../lib/format.js';
 
 /**
- * Behind the PIN this doubles as the village directory, which for a club like
- * this is half the reason people open the app.
+ * The club directory, behind the PIN.
+ *
+ * Same card as the public board — photo, name, S/o — with the contact details
+ * added, because that is the reason a member opens this page. No money appears
+ * here at all: what someone pays, and whether they are behind, lives on the
+ * monthly contribution board and nowhere near their name in a directory.
  */
+
+function MemberCard({ member }) {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = member.photoUrl && !failed;
+
+  // has-actions keeps these tweaks off the public board, which shares the same
+  // base card and must not change.
+  return (
+    <div className="member-card has-actions">
+      <div className="member-photo">
+        {showPhoto ? (
+          <img src={member.photoUrl} alt={member.name} onError={() => setFailed(true)} />
+        ) : (
+          <MemberAvatar name={member.name} />
+        )}
+      </div>
+
+      <div className="member-name">
+        {member.name}
+        {member.fatherName ? <span className="member-son">S/o {member.fatherName}</span> : null}
+        <span className="member-since">Member since {periodLabel(member.joinedPeriod)}</span>
+        <span className="member-since num">{member.phone}</span>
+      </div>
+
+      <div className="member-actions">
+        <a href={`tel:+91${member.phone}`} className="btn btn-ghost member-btn" aria-label={`Call ${member.name}`}>
+          <Icon.phone />
+          Call
+        </a>
+        <a
+          href={`https://wa.me/91${member.phone}`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn-saffron member-btn"
+          aria-label={`WhatsApp ${member.name}`}
+        >
+          <Icon.whatsapp />
+          Chat
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function Members() {
   const { data, loading, error, reload } = useFetch('/view/members');
   const [q, setQ] = useState('');
@@ -31,12 +79,12 @@ export default function Members() {
       <PageHead
         eyebrow="Club directory"
         title="Members"
-        sub={`${data.totalCount} members · ${data.contributingCount} on the monthly collection`}
+        sub={`${data.totalCount} ${data.totalCount === 1 ? 'member' : 'members'} of the club`}
       />
 
       <input
         className="input"
-        placeholder="Search by name or number"
+        placeholder="Search by name, father's name or number"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         style={{ marginBottom: 14 }}
@@ -46,62 +94,12 @@ export default function Members() {
       {list.length === 0 ? (
         <Empty title="No one found">Try a different name.</Empty>
       ) : (
-        <Card>
-          <CardHead title={`${list.length} shown`} />
+        <div className="member-grid">
           {list.map((m) => (
-            <div key={m.id} className="list-row">
-              <span className="avatar" aria-hidden="true">
-                {initials(m.name)}
-              </span>
-
-              <div className="list-body">
-                <p className="list-name">{m.name}</p>
-                {m.fatherName ? <p className="list-meta">S/o {m.fatherName}</p> : null}
-                <p className="list-meta">
-                  {m.isEnabled ? `${money(m.monthlyAmountPaise)} a month` : 'Not contributing'}
-                  {' · since '}
-                  {periodLabel(m.joinedPeriod)}
-                </p>
-              </div>
-
-              <div className="list-end">
-                {m.pendingCount > 0 ? (
-                  <span className="chip chip-unpaid">
-                    {m.pendingCount} {m.pendingCount === 1 ? 'month' : 'months'}
-                  </span>
-                ) : m.isEnabled ? (
-                  <span className="chip chip-paid">Up to date</span>
-                ) : (
-                  <span className="chip chip-exempt">Member</span>
-                )}
-                <div style={{ display: 'flex', gap: 6, marginTop: 6, justifyContent: 'flex-end' }}>
-                  <a
-                    href={`tel:+91${m.phone}`}
-                    className="btn btn-ghost btn-sm"
-                    aria-label={`Call ${m.name}`}
-                  >
-                    <Icon.phone />
-                  </a>
-                  <a
-                    href={`https://wa.me/91${m.phone}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-ghost btn-sm"
-                    aria-label={`WhatsApp ${m.name}`}
-                  >
-                    <Icon.whatsapp />
-                  </a>
-                </div>
-              </div>
-            </div>
+            <MemberCard key={m.id} member={m} />
           ))}
-        </Card>
+        </div>
       )}
-
-      <p className="tiny muted center" style={{ marginTop: 18 }}>
-        Members marked “Not contributing” are full members of the club who are not on the monthly
-        collection list.
-      </p>
     </>
   );
 }

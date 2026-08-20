@@ -1798,6 +1798,52 @@
   line-height: 1.35;
 }
 
+/*
+ * Everything below applies only to the directory behind the PIN. The public
+ * board uses the same base card and is deliberately left alone.
+ */
+.member-card.has-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-card.has-actions .member-name {
+  padding-bottom: 8px;
+  flex: 1;
+}
+
+.member-since {
+  display: block;
+  margin-top: 3px;
+  font-weight: 400;
+  font-size: var(--t-xs);
+  color: var(--ink-4);
+  line-height: 1.35;
+}
+
+.member-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 8px 10px;
+  margin-top: auto;
+}
+
+.member-btn {
+  min-height: 34px;
+  padding: 0 4px;
+  gap: 4px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  border-radius: var(--r-sm);
+}
+
+.member-btn svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
 .join-card {
   border: 1px dashed var(--brass);
   border-radius: var(--r);

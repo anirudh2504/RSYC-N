@@ -83,23 +83,28 @@ router.get('/transactions', (req, res) => {
   });
 });
 
+/**
+ * The club directory. Deliberately carries no money at all — not the monthly
+ * amount, not what anyone has paid, not who is behind. That belongs on the
+ * monthly contribution board, not against a person's name in a directory.
+ */
 router.get('/members', (_req, res) => {
-  const dues = duesForEveryone().sort((a, b) => a.name.localeCompare(b.name));
+  const members = store
+    .activeMembers()
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   res.json({
-    members: dues.map((d) => ({
-      id: d.memberId,
-      name: d.name,
-      fatherName: d.fatherName,
-      phone: d.phone,
-      joinedPeriod: d.joinedPeriod,
-      monthlyAmountPaise: d.monthlyAmountPaise,
-      isEnabled: d.isEnabled,
-      pendingCount: d.pendingCount,
-      pendingPaise: d.pendingPaise,
-      totalPaidPaise: d.totalPaidPaise,
+    members: members.map((m) => ({
+      id: m.id,
+      name: m.name,
+      fatherName: m.fatherName || '',
+      phone: m.phone,
+      joinedPeriod: m.joinedPeriod,
+      joinedOn: m.joinedOn,
+      photoUrl: m.photoUrl || null,
     })),
-    contributingCount: dues.filter((d) => d.isEnabled).length,
-    totalCount: dues.length,
+    totalCount: members.length,
   });
 });
 

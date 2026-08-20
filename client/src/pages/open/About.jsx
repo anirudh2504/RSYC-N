@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useFetch } from '../../context/Session.jsx';
+import { useFetch, useSession } from '../../context/Session.jsx';
 import { Card, CardHead, ErrorState, Loading, Rule } from '../../components/ui.jsx';
 import { Logo, Icon } from '../../components/Ornaments.jsx';
 
@@ -73,6 +73,7 @@ function PointList({ items, hindi }) {
 
 export default function About() {
   const { data, loading, error, reload } = useFetch('/open/about');
+  const session = useSession();
   // Hindi is the default — it is the language the village actually reads.
   const [lang, setLang] = useState('hi');
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -237,22 +238,26 @@ export default function About() {
         </div>
       </Card>
 
-      {/* ---- join ---- */}
-      <Link to="/join" style={{ display: 'block', marginTop: 22 }}>
-        <div className="join-card">
-          <p className={`section-title ${hi ? 'devanagari' : ''}`}>{t.joinCta}</p>
-          <p className="small muted" style={{ marginTop: 6 }}>
-            Contribute to the work and the events
-          </p>
-          <span
-            className="btn btn-saffron btn-sm"
-            style={{ marginTop: 12, display: 'inline-flex' }}
-          >
-            <Icon.people />
-            Send a request
-          </span>
-        </div>
-      </Link>
+      {/* ---- join ----
+           Only for someone who is not signed in. Anyone holding the club PIN,
+           and any admin, has no use for an invitation to join. */}
+      {!session.viewer && !session.isAdmin ? (
+        <Link to="/join" style={{ display: 'block', marginTop: 22 }}>
+          <div className="join-card">
+            <p className={`section-title ${hi ? 'devanagari' : ''}`}>{t.joinCta}</p>
+            <p className="small muted" style={{ marginTop: 6 }}>
+              Contribute to the work and the events
+            </p>
+            <span
+              className="btn btn-saffron btn-sm"
+              style={{ marginTop: 12, display: 'inline-flex' }}
+            >
+              <Icon.people />
+              Send a request
+            </span>
+          </div>
+        </Link>
+      ) : null}
     </>
   );
 }
