@@ -102,7 +102,12 @@ router.get('/members', (_req, res) => {
       .members()
       .filter((m) => m.status === 'active')
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((m) => ({ id: m.id, name: m.name, photoUrl: m.photoUrl || null })),
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        fatherName: m.fatherName || '',
+        photoUrl: m.photoUrl || null,
+      })),
     contactPhone: s.contactPhone,
     groupName: s.groupName,
     groupNameHi: s.groupNameHi,
@@ -119,11 +124,15 @@ const joinLimiter = rateLimit({
 
 router.post('/join-request', joinLimiter, (req, res) => {
   const name = String(req.body.name || '').trim();
+  const fatherName = String(req.body.fatherName || '').trim();
   const phone = String(req.body.phone || '').trim();
   const message = String(req.body.message || '').trim().slice(0, 500);
 
   if (name.length < 2) {
     return res.status(400).json({ error: 'invalid', message: 'Please enter your full name.' });
+  }
+  if (fatherName.length < 2) {
+    return res.status(400).json({ error: 'invalid', message: "Please enter your father's name." });
   }
   if (!/^[0-9]{10}$/.test(phone)) {
     return res
@@ -137,7 +146,7 @@ router.post('/join-request', joinLimiter, (req, res) => {
   const clubPhone = settings.contactPhone;
   const text =
     `Namaste. I would like to join ${settings.groupName}, ${settings.village}.\n` +
-    `Name: ${name}\nPhone: ${phone}` +
+    `Name: ${name}\nS/o: ${fatherName}\nPhone: ${phone}` +
     (message ? `\n${message}` : '');
   const whatsappUrl = clubPhone
     ? `https://wa.me/91${clubPhone}?text=${encodeURIComponent(text)}`
@@ -150,7 +159,7 @@ router.post('/join-request', joinLimiter, (req, res) => {
     .find((r) => r.phone === phone && r.status === 'pending');
   if (existing) return res.json({ ok: true, whatsappUrl });
 
-  store.addJoinRequest({ name, phone, message });
+  store.addJoinRequest({ name, fatherName, phone, message });
   store.addAudit({
     actorAdminId: null,
     action: 'joinrequest.create',
@@ -161,7 +170,7 @@ router.post('/join-request', joinLimiter, (req, res) => {
   });
 
   // Fire and forget. A notification failure must never lose the request.
-  notifyJoinRequest({ name, phone, message })
+  notifyJoinRequest({ name, fatherName, phone, message })
     .then((r) => {
       if (r.sent) console.log(`[rsyc] WhatsApp notified ${r.delivered}/${r.total} admin(s)`);
       else console.log(`[rsyc] join request saved; not notified — ${r.reason || 'send failed'}`);

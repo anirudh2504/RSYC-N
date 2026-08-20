@@ -85,6 +85,7 @@ export default function MemberDetail() {
           <h1 className="page-title" style={{ fontSize: 'var(--t-xl)' }}>
             {m.name}
           </h1>
+          {m.fatherName ? <p className="small muted">S/o {m.fatherName}</p> : null}
           <p className="small muted num">
             {m.phone} · member since {periodLabel(m.joinedPeriod)}
           </p>

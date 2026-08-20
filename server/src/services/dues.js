@@ -80,6 +80,7 @@ export function duesForMember(memberId, upto = currentPeriod()) {
   return {
     memberId,
     name: member.name,
+    fatherName: member.fatherName || '',
     phone: member.phone,
     status: member.status,
     joinedPeriod: member.joinedPeriod,

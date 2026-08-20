@@ -89,6 +89,7 @@ router.get('/members', (_req, res) => {
     members: dues.map((d) => ({
       id: d.memberId,
       name: d.name,
+      fatherName: d.fatherName,
       phone: d.phone,
       joinedPeriod: d.joinedPeriod,
       monthlyAmountPaise: d.monthlyAmountPaise,

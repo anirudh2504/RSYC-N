@@ -39,6 +39,8 @@ adminSchema.pre('deleteOne', { document: true, query: false }, function guard(ne
 const memberSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    // Father's name — shown as "S/o ..." beside the member everywhere.
+    fatherName: { type: String, default: '', trim: true },
     phone: { type: String, required: true, trim: true, index: true },
     photoUrl: { type: String, default: null },
     joinedOn: { type: Date, required: true },
@@ -143,6 +145,7 @@ const eventSchema = new Schema(
 const joinRequestSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    fatherName: { type: String, default: '', trim: true },
     phone: { type: String, required: true, trim: true },
     message: { type: String, default: '' },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },

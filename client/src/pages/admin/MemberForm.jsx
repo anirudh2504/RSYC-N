@@ -14,6 +14,7 @@ export default function MemberForm() {
   const membersQuery = useFetch('/admin/members');
 
   const [name, setName] = useState(params.get('name') || '');
+  const [fatherName, setFatherName] = useState(params.get('fatherName') || '');
   const [phone, setPhone] = useState(params.get('phone') || '');
   const [enabled, setEnabled] = useState(true);
   const [amount, setAmount] = useState('');
@@ -38,6 +39,7 @@ export default function MemberForm() {
     try {
       const res = await api.post('/admin/members', {
         name,
+        fatherName,
         phone,
         isEnabled: enabled,
         amountPaise: Math.round((Number(effectiveAmount) || 0) * 100),
@@ -67,6 +69,16 @@ export default function MemberForm() {
               className="input"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </Field>
+
+          <Field label="Father's name" id="m-father" hint="Shown as “S/o …” beside their name.">
+            <input
+              id="m-father"
+              className="input"
+              value={fatherName}
+              onChange={(e) => setFatherName(e.target.value)}
               required
             />
           </Field>

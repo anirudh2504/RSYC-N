@@ -72,7 +72,7 @@ async function sendOne(to, body, requestName, requestPhone) {
  * Tells the admins a new join request has arrived. Never throws — a failure to
  * notify must not stop the request itself being saved.
  */
-export async function notifyJoinRequest({ name, phone, message }) {
+export async function notifyJoinRequest({ name, fatherName, phone, message }) {
   if (!whatsappConfigured()) {
     return { sent: false, reason: 'WhatsApp is not configured; see server/.env.example' };
   }
@@ -80,6 +80,7 @@ export async function notifyJoinRequest({ name, phone, message }) {
   const body =
     `New join request — ${config.clubName}\n\n` +
     `Name: ${name}\n` +
+    (fatherName ? `S/o: ${fatherName}\n` : '') +
     `Phone: ${phone}\n` +
     (message ? `Message: ${message}\n` : '') +
     `\nPlease call them.`;

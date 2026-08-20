@@ -9,7 +9,7 @@ import { Logo, Icon } from '../../components/Ornaments.jsx';
  * have the club PIN yet, so this cannot sit behind it.
  */
 export default function Join() {
-  const [form, setForm] = useState({ name: '', phone: '', message: '' });
+  const [form, setForm] = useState({ name: '', fatherName: '', phone: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -117,10 +117,20 @@ export default function Join() {
             />
           </Field>
 
+          <Field label="Father's name · पिता का नाम" id="join-father">
+            <input
+              id="join-father"
+              className="input"
+              value={form.fatherName}
+              onChange={set('fatherName')}
+              required
+            />
+          </Field>
+
           <Field
             label="Mobile number · मोबाइल नंबर"
             id="join-phone"
-            hint="10 digits, without +91. The club will call you on this number."
+            hint="10 digits, without +91. Anyone from club will contact you on this number."
           >
             <input
               id="join-phone"
@@ -149,7 +159,7 @@ export default function Join() {
             type="submit"
             block
             className="btn-slim"
-            disabled={busy || form.phone.length !== 10}
+            disabled={busy || form.phone.length !== 10 || form.fatherName.trim().length < 2}
           >
             {busy ? 'Sending…' : 'Send request'}
           </Button>

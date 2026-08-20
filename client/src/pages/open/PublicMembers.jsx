@@ -24,7 +24,10 @@ function MemberCard({ member }) {
           <MemberAvatar name={member.name} />
         )}
       </div>
-      <p className="member-name">{member.name}</p>
+      <div className="member-name">
+        {member.name}
+        {member.fatherName ? <span className="member-son">S/o {member.fatherName}</span> : null}
+      </div>
     </div>
   );
 }

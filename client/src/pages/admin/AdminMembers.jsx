@@ -79,6 +79,7 @@ export default function AdminMembers() {
 
               <div className="list-body">
                 <p className="list-name">{m.name}</p>
+                {m.fatherName ? <p className="list-meta">S/o {m.fatherName}</p> : null}
                 <p className="list-meta">
                   {m.phone} ·{' '}
                   {m.isEnabled ? `${money(m.monthlyAmountPaise)}/month` : 'Not contributing'} · since{' '}

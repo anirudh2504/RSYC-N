@@ -19,7 +19,10 @@ export default function Members() {
   const needle = q.trim().toLowerCase();
   const list = needle
     ? data.members.filter(
-        (m) => m.name.toLowerCase().includes(needle) || m.phone.includes(needle),
+        (m) =>
+          m.name.toLowerCase().includes(needle) ||
+          (m.fatherName || '').toLowerCase().includes(needle) ||
+          m.phone.includes(needle),
       )
     : data.members;
 
@@ -53,6 +56,7 @@ export default function Members() {
 
               <div className="list-body">
                 <p className="list-name">{m.name}</p>
+                {m.fatherName ? <p className="list-meta">S/o {m.fatherName}</p> : null}
                 <p className="list-meta">
                   {m.isEnabled ? `${money(m.monthlyAmountPaise)} a month` : 'Not contributing'}
                   {' · since '}

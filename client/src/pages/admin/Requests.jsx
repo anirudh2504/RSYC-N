@@ -30,9 +30,12 @@ export default function Requests() {
     try {
       const res = await api.post(`/admin/join-requests/${request.id}/approve`);
       // Straight into the add-member form with the details already filled in.
-      navigate(
-        `/admin/members/new?name=${encodeURIComponent(res.prefill.name)}&phone=${encodeURIComponent(res.prefill.phone)}`,
-      );
+      const q = new URLSearchParams({
+        name: res.prefill.name,
+        fatherName: res.prefill.fatherName || '',
+        phone: res.prefill.phone,
+      });
+      navigate(`/admin/members/new?${q.toString()}`);
     } catch (err) {
       toast(err.message, 'bad');
     }
@@ -68,6 +71,7 @@ export default function Requests() {
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ fontWeight: 700 }}>{r.name}</p>
+                  {r.fatherName ? <p className="small muted">S/o {r.fatherName}</p> : null}
                   <p className="small muted num">
                     {r.phone} · {relativeDays(r.createdAt)}
                   </p>

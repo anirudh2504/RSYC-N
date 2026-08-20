@@ -1737,6 +1737,15 @@
   overflow-wrap: anywhere;
 }
 
+.member-son {
+  display: block;
+  margin-top: 3px;
+  font-weight: 400;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
 .join-card {
   border: 1px dashed var(--brass);
   border-radius: var(--r);

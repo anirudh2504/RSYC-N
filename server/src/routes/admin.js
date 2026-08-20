@@ -324,6 +324,7 @@ router.get('/members', (_req, res) => {
     members: dues.map((d) => ({
       id: d.memberId,
       name: d.name,
+      fatherName: d.fatherName,
       phone: d.phone,
       joinedPeriod: d.joinedPeriod,
       monthlyAmountPaise: d.monthlyAmountPaise,
@@ -355,11 +356,13 @@ router.get('/members/:id', (req, res) => {
 
 router.post('/members', (req, res) => {
   const name = String(req.body.name || '').trim();
+  const fatherName = String(req.body.fatherName || '').trim();
   const phone = String(req.body.phone || '').trim();
   const isEnabled = req.body.isEnabled !== false;
   const amountPaise = Math.round(Number(req.body.amountPaise) || 0);
 
   if (name.length < 2) return bad(res, 'Enter the member name.');
+  if (fatherName.length < 2) return bad(res, "Enter the father's name.");
   if (!/^[0-9]{10}$/.test(phone)) return bad(res, 'Enter a 10 digit mobile number.');
   if (isEnabled && amountPaise <= 0) return bad(res, 'Enter the monthly amount.');
 
@@ -367,6 +370,7 @@ router.post('/members', (req, res) => {
 
   const member = store.addMember({
     name,
+    fatherName,
     phone,
     joinedOn: new Date(`${joinedPeriod}-01T06:00:00.000Z`).toISOString(),
     joinedPeriod,
@@ -394,6 +398,11 @@ router.patch('/members/:id', (req, res) => {
     const name = String(req.body.name).trim();
     if (name.length < 2) return bad(res, 'Enter the member name.');
     patch.name = name;
+  }
+  if (req.body.fatherName !== undefined) {
+    const fatherName = String(req.body.fatherName).trim();
+    if (fatherName.length < 2) return bad(res, "Enter the father's name.");
+    patch.fatherName = fatherName;
   }
   if (req.body.phone !== undefined) {
     const phone = String(req.body.phone).trim();
@@ -612,7 +621,14 @@ router.post('/join-requests/:id/approve', (req, res) => {
   request.reviewedAt = nowIso();
 
   audit(req, 'joinrequest.approve', 'JoinRequest', `Approved ${request.name}`, request.id);
-  return res.json({ ok: true, prefill: { name: request.name, phone: request.phone } });
+  return res.json({
+    ok: true,
+    prefill: {
+      name: request.name,
+      fatherName: request.fatherName || '',
+      phone: request.phone,
+    },
+  });
 });
 
 router.post('/join-requests/:id/reject', (req, res) => {
