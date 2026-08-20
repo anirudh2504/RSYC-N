@@ -1,32 +1,48 @@
 client/public — files served at the site root
 =============================================
 
-Anything in this folder is served as-is from "/". So a file saved here as
+Anything in this folder is served as-is from "/". A file saved here as
 
-    rao-shekha-ji.jpg
+    logo.jpeg
 
 is reachable in the browser at
 
-    /rao-shekha-ji.jpg
+    /logo.jpeg
 
 
-THE FOUNDER PORTRAIT
---------------------
-The About page looks for /rao-shekha-ji.jpg. Save the painting there and it
-appears on the right-hand side of the page automatically — no code change.
+>>> TWO FILES TO SAVE HERE <<<
+------------------------------
 
-If the file is not there, the page quietly falls back to the drawn SVG
-portrait instead, so nothing ever breaks or shows a missing-image icon.
+1. THE CLUB LOGO          ->  client/public/logo.jpeg
 
-The path is editable: Admin → Club settings → "The name we carry" →
-"Portrait image".
+   Used in every place the club mark appears, all from one file:
+     - the top bar, on every page
+     - the About page heading
+     - the unlock screen and the admin sign-in screen
+     - the "request submitted" screen
+     - the browser tab icon, and the icon a phone shows when the site is
+       added to the home screen
 
-Use a portrait-shaped image (taller than wide, around 3:4). Roughly 800px on
-the long edge is plenty — anything larger just costs the village bandwidth.
+   Save it and all of those change at once. No code edit, no restart —
+   just refresh the page.
+
+   Until it exists, the site falls back to the drawn crest, so nothing ever
+   looks broken.
+
+     file name : logo.jpeg   (exactly this — lower case, .jpeg not .jpg)
+     shape     : square works best, since it sits in a 34px box in the top bar
+     size      : 400x400 is plenty
 
 
-MEMBER PHOTOS
--------------
-Member cards on the public members board fall back to a drawn medallion with
-the member's initials. To use real photographs later, save them here and set
-each member's photoUrl.
+2. THE PORTRAIT OF RAO SHEKHA JI  ->  client/public/images/rao-shekha-ji.jpg
+
+   See the README inside the images folder.
+
+
+NOTES
+-----
+The logo path is set once in client/src/components/Ornaments.jsx as LOGO_SRC.
+Change it there if you ever want a different filename.
+
+If you save the logo and still see the old crest, the browser has cached the
+failed request — hard refresh with Ctrl+Shift+R.

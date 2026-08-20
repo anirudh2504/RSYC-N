@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 /**
  * Hand-drawn SVG motifs.
  *
@@ -345,6 +347,38 @@ export const Icon = {
   ),
 };
 
+/* ------------------------------------------------------------------ logo -- */
+
+/** The club logo file, at client/public/images/logo.jpeg. */
+export const LOGO_SRC = '/images/logo.jpeg';
+
+// Remembered across every instance, so once the file is known to be missing
+// the other logos on the page do not each fire their own failing request.
+let logoMissing = false;
+
+/**
+ * The club logo, used everywhere a mark appears — top bar, About page, unlock
+ * and sign-in screens. Falls back to the drawn crest until the file exists, so
+ * the site never shows a broken image.
+ */
+export function Logo({ className, alt = 'Rav Shekha Ji Yuva Club' }) {
+  const [missing, setMissing] = useState(logoMissing);
+
+  if (missing) return <Crest className={className} title={alt} />;
+
+  return (
+    <img
+      src={LOGO_SRC}
+      alt={alt}
+      className={`logo-img ${className || ''}`}
+      onError={() => {
+        logoMissing = true;
+        setMissing(true);
+      }}
+    />
+  );
+}
+
 /* ----------------------------------------------------- member medallion --- */
 
 const MEMBER_TONES = [
@@ -425,86 +459,157 @@ export function MemberAvatar({ name, className }) {
  */
 export function FounderPortrait({ className }) {
   return (
-    <svg className={className} viewBox="0 0 150 200" role="img" aria-label="Illustrated portrait of Rao Shekha Ji">
+    <svg
+      className={className}
+      viewBox="0 0 150 200"
+      role="img"
+      aria-label="Illustrated portrait of Rao Shekha Ji"
+    >
       <defs>
-        <linearGradient id="fpGround" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#25368a" />
-          <stop offset="100%" stopColor="#141f52" />
-        </linearGradient>
-        <pattern id="fpJali" width="16" height="16" patternUnits="userSpaceOnUse">
-          <path d="M8 1l7 7-7 7-7-7z" fill="none" stroke="#e3b45c" strokeWidth="0.45" opacity="0.4" />
-        </pattern>
-        <clipPath id="fpArch">
-          <path d="M14 196V64c0-28 22-48 61-48s61 20 61 48v132z" />
-        </clipPath>
+        <radialGradient id="fpHalo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#f6ecd2" />
+          <stop offset="82%" stopColor="#efe1c0" />
+          <stop offset="100%" stopColor="#e2d0aa" />
+        </radialGradient>
       </defs>
 
-      <rect width="150" height="200" fill="url(#fpGround)" />
-      <rect width="150" height="200" fill="url(#fpJali)" />
+      {/* aged paper ground */}
+      <rect width="150" height="200" fill="#cfc4ab" />
+      {/* the grey-green field the figure sits against */}
+      <rect x="4" y="18" width="142" height="182" fill="#6d7570" />
 
-      <g clipPath="url(#fpArch)">
-        <rect x="14" y="4" width="122" height="192" fill="#1d2a6d" />
-        {/* halo */}
-        <circle cx="75" cy="86" r="42" fill="#e8b75f" opacity="0.18" />
-        <circle cx="75" cy="86" r="42" fill="none" stroke="#e8b75f" strokeWidth="0.8" opacity="0.5" />
+      {/* top border band, maroon with cream buds */}
+      <rect x="4" y="0" width="142" height="17" fill="#7d2b23" />
+      <g fill="#efe3c8">
+        {[12, 32, 52, 72, 92, 112, 132].map((x) => (
+          <path key={x} d={`M${x} 4c3 2 4 5 3 8-2-3-5-3-8-1 1-4 3-6 5-7z`} />
+        ))}
+      </g>
+      <rect x="4" y="17" width="142" height="2" fill="#3b3a33" />
 
-        {/* shoulders and jama */}
-        <path d="M30 196v-24c0-17 18-28 45-28s45 11 45 28v24z" fill="#f2e6cf" />
-        <path d="M75 144v52" stroke="#c9a65a" strokeWidth="1.2" opacity="0.8" />
-        <path d="M52 152c8 12 12 26 12 44M98 152c-8 12-12 26-12 44" fill="none" stroke="#d8c49a" strokeWidth="1" />
-        {/* patka sash */}
-        <path d="M40 178h70v8H40z" fill="#a33421" opacity="0.9" />
+      {/* the chhatri dome behind the figure */}
+      <path
+        d="M20 200V88c0-27 24-46 55-46s55 19 55 46v112"
+        fill="#5c6360"
+        stroke="#7d2b23"
+        strokeWidth="4"
+      />
+      <path
+        d="M28 200V90c0-23 20-39 47-39s47 16 47 39v110"
+        fill="none"
+        stroke="#2f2f2b"
+        strokeWidth="1.2"
+        opacity="0.75"
+      />
 
-        {/* head, in profile */}
-        <path
-          d="M84 60c11 4 17 14 16 26-1 10-5 18-10 24-4 5-9 8-15 8-9 0-16-5-19-14-2-6-3-13-2-20 2-14 11-25 24-26 2 0 4 1 6 2z"
-          fill="#d8a778"
-        />
-        {/* beard */}
-        <path
-          d="M60 92c-1 9 1 17 6 22 4 4 9 6 14 6 4 0 8-2 11-5-6 2-13 1-18-3-6-5-9-12-9-20z"
-          fill="#3a2a20"
-        />
-        <path d="M63 100c3 9 9 15 17 16" fill="none" stroke="#2b1e17" strokeWidth="1.4" />
-        {/* moustache */}
-        <path d="M62 86c5-3 11-3 15 0" fill="none" stroke="#2b1e17" strokeWidth="2.2" strokeLinecap="round" />
-        {/* eye */}
-        <path d="M66 76c3-2 7-2 9 0" fill="none" stroke="#2b1e17" strokeWidth="1.6" strokeLinecap="round" />
-        <circle cx="70" cy="78" r="1.7" fill="#2b1e17" />
-        {/* tilak */}
-        <path d="M76 64v9" stroke="#a33421" strokeWidth="1.8" strokeLinecap="round" />
+      {/* halo */}
+      <circle cx="75" cy="82" r="35" fill="url(#fpHalo)" />
+      <circle cx="75" cy="82" r="35" fill="none" stroke="#b09a6c" strokeWidth="0.8" />
 
-        {/* pagdi */}
-        <path
-          d="M55 62c-2-13 6-24 20-27 14-3 27 4 30 16 1 5 0 9-2 12-6-7-15-11-25-10-10 1-18 5-23 9z"
-          fill="#e0912a"
-        />
-        <path d="M57 56c7-6 16-9 26-9s18 3 23 8" fill="none" stroke="#f6d78a" strokeWidth="1.2" />
-        <path d="M60 48c6-5 14-8 22-8s16 2 21 6" fill="none" stroke="#f6d78a" strokeWidth="1" opacity="0.8" />
-        {/* turban jewel and plume */}
-        <circle cx="99" cy="47" r="3.4" fill="#f6d78a" />
-        <path d="M99 44c2-7 5-11 9-13-2 5-3 10-2 15z" fill="#e8e2d2" />
-
-        {/* sword hilt at the shoulder */}
-        <path d="M112 168l16 22" stroke="#c9a65a" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="111" cy="166" r="3.6" fill="#e8b75f" />
+      {/* ---- torso: the cream jama ---- */}
+      <path d="M30 200v-30c0-22 20-36 45-36s45 14 45 36v30z" fill="#e9dcb8" />
+      <path d="M30 200v-30c0-22 20-36 45-36s45 14 45 36v30z" fill="none" stroke="#8d7c54" strokeWidth="0.9" />
+      {/* faint dot sprigs on the cloth */}
+      <g fill="#c8b485" opacity="0.75">
+        {[
+          [45, 168], [58, 182], [40, 190], [100, 168], [112, 182], [95, 190], [75, 192],
+        ].map(([x, y]) => (
+          <g key={`${x}-${y}`}>
+            <circle cx={x} cy={y} r="1" />
+            <circle cx={x + 3} cy={y + 3} r="1" />
+            <circle cx={x - 3} cy={y + 3} r="1" />
+          </g>
+        ))}
       </g>
 
-      {/* arch frame */}
+      {/* crossed bandolier straps with gold studs */}
+      <path d="M52 146L104 196" stroke="#b8863a" strokeWidth="7" />
+      <path d="M98 146L46 196" stroke="#b8863a" strokeWidth="7" />
+      <path d="M52 146L104 196M98 146L46 196" stroke="#7d2b23" strokeWidth="1" opacity="0.6" />
+      <g fill="#f2d99a">
+        {[0.2, 0.4, 0.6, 0.8].map((t) => (
+          <circle key={`a${t}`} cx={52 + 52 * t} cy={146 + 50 * t} r="1.6" />
+        ))}
+        {[0.2, 0.4, 0.6, 0.8].map((t) => (
+          <circle key={`b${t}`} cx={98 - 52 * t} cy={146 + 50 * t} r="1.6" />
+        ))}
+      </g>
+
+      {/* waist plate */}
+      <rect x="62" y="184" width="26" height="16" fill="#dcc894" stroke="#8d7c54" strokeWidth="0.9" />
+      <rect x="68" y="189" width="14" height="9" fill="#6d7570" stroke="#8d7c54" strokeWidth="0.8" />
+
+      {/* ---- bow and arrows over the right shoulder ---- */}
+      <path d="M112 76c9 14 11 34 4 54" fill="none" stroke="#221c15" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M112 76c-2 4-1 8 2 10" fill="none" stroke="#221c15" strokeWidth="2" />
+      <path d="M110 74c4-5 8-6 11-3-4 0-7 2-9 5z" fill="#221c15" />
+      <path d="M116 84l3 44" stroke="#8d7c54" strokeWidth="1" />
+      <path d="M117 86l4-6M119 92l4-6" stroke="#efe3c8" strokeWidth="1.2" strokeLinecap="round" />
+
+      {/* ---- neck ---- */}
+      <path d="M66 108h18v20H66z" fill="#c99263" />
+
+      {/* ---- necklaces: pearl strands and a gold pendant ---- */}
+      <path d="M58 130q17 16 34 0" fill="none" stroke="#f2ead6" strokeWidth="2.6" />
+      <path d="M54 133q21 22 42 0" fill="none" stroke="#f2ead6" strokeWidth="2.2" />
+      <path d="M50 136q25 28 50 0" fill="none" stroke="#e6d9b4" strokeWidth="1.8" />
+      <circle cx="75" cy="147" r="5.4" fill="#e0b458" stroke="#8d6a24" strokeWidth="0.8" />
+      <circle cx="75" cy="147" r="2" fill="#7d2b23" />
+      {/* choker */}
+      <path d="M63 126q12 9 24 0" fill="none" stroke="#c9302c" strokeWidth="2.4" />
+
+      {/* ---- face ---- */}
       <path
-        d="M14 196V64c0-28 22-48 61-48s61 20 61 48v132"
-        fill="none"
-        stroke="#e3b45c"
-        strokeWidth="2"
+        d="M75 56c15 0 24 11 24 27 0 17-10 31-24 31S51 100 51 83c0-16 9-27 24-27z"
+        fill="#d9a06d"
       />
+      {/* ears */}
+      <path d="M50 84c-3 0-5 3-4 6 1 3 3 5 5 4z" fill="#c99263" />
+      <path d="M100 84c3 0 5 3 4 6-1 3-3 5-5 4z" fill="#c99263" />
+      <circle cx="49" cy="92" r="1.8" fill="#e0b458" />
+      <circle cx="101" cy="92" r="1.8" fill="#e0b458" />
+
+      {/* brows */}
+      <path d="M60 76q7-4 14 0" fill="none" stroke="#2b1e17" strokeWidth="2" strokeLinecap="round" />
+      <path d="M76 76q7-4 14 0" fill="none" stroke="#2b1e17" strokeWidth="2" strokeLinecap="round" />
+      {/* eyes */}
+      <path d="M59 84q8-6 16 0q-8 6-16 0z" fill="#f4ece0" stroke="#2b1e17" strokeWidth="1.1" />
+      <path d="M75 84q8-6 16 0q-8 6-16 0z" fill="#f4ece0" stroke="#2b1e17" strokeWidth="1.1" />
+      <circle cx="67" cy="84" r="2.4" fill="#221c15" />
+      <circle cx="83" cy="84" r="2.4" fill="#221c15" />
+      {/* tilak */}
+      <circle cx="75" cy="69" r="2.2" fill="#a3231c" />
+      {/* nose */}
+      <path d="M75 88v8q-3 2-5 1" fill="none" stroke="#a9714a" strokeWidth="1.3" strokeLinecap="round" />
+      {/* the moustache, the most recognisable thing about him */}
       <path
-        d="M22 196V66c0-24 19-42 53-42s53 18 53 42v130"
-        fill="none"
-        stroke="#e3b45c"
-        strokeWidth="0.8"
-        opacity="0.6"
+        d="M75 102c-6-4-14-4-19 1-4 4-4 9-1 12 2-5 6-8 11-8 4 0 7 1 9 3 2-2 5-3 9-3 5 0 9 3 11 8 3-3 3-8-1-12-5-5-13-5-19-1z"
+        fill="#241c14"
       />
-      <rect x="10" y="192" width="130" height="4" rx="2" fill="#e3b45c" />
+      {/* mouth and chin */}
+      <path d="M70 108q5 3 10 0" fill="none" stroke="#8c4a3a" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M69 115q6 4 12 0" fill="none" stroke="#b9835a" strokeWidth="1.1" />
+
+      {/* ---- the pagdi ---- */}
+      <path
+        d="M48 74c-3-16 5-29 17-33 15-5 30 1 35 14 2 5 2 10 1 14-8-9-19-13-30-12-10 1-18 8-23 17z"
+        fill="#8e2f22"
+      />
+      <path d="M50 66q12-13 28-13t26 11" fill="none" stroke="#d9b070" strokeWidth="1.6" />
+      <path d="M53 58q11-11 24-11t23 9" fill="none" stroke="#c8362a" strokeWidth="3" />
+      <path d="M56 50q10-9 20-9t19 8" fill="none" stroke="#8e2f22" strokeWidth="3.5" />
+      <path d="M58 44q9-7 17-7t16 6" fill="none" stroke="#c8362a" strokeWidth="3" />
+      {/* the sarpech jewel */}
+      <ellipse cx="75" cy="58" rx="11" ry="6.5" fill="#e0b458" stroke="#8d6a24" strokeWidth="0.9" />
+      <circle cx="75" cy="58" r="2.6" fill="#a3231c" />
+      <circle cx="67" cy="58" r="1.7" fill="#7d2b23" />
+      <circle cx="83" cy="58" r="1.7" fill="#7d2b23" />
+      <path d="M64 64q11 5 22 0" fill="none" stroke="#e0b458" strokeWidth="1.6" />
+      {/* turban tail falling behind the shoulder */}
+      <path d="M99 68c6 6 8 14 6 22" fill="none" stroke="#8e2f22" strokeWidth="4" strokeLinecap="round" />
+
+      {/* frame */}
+      <rect x="4" y="0" width="142" height="200" fill="none" stroke="#3b3a33" strokeWidth="2" />
     </svg>
   );
 }

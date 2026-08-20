@@ -780,6 +780,8 @@ router.put('/settings', requireMaster, (req, res) => {
     'whatsappGroupUrl',
     'contactPhone',
     'notice',
+    'purpose',
+    'purposeHi',
     'founderName',
     'founderNameHi',
     'founderYears',
@@ -789,7 +791,12 @@ router.put('/settings', requireMaster, (req, res) => {
   ].forEach((k) => {
     if (req.body[k] !== undefined) patch[k] = String(req.body[k]);
   });
-  if (Array.isArray(req.body.rules)) patch.rules = req.body.rules.filter(Boolean);
+
+  ['rules', 'purposePoints', 'purposePointsHi', 'founderContribution', 'founderContributionHi'].forEach(
+    (k) => {
+      if (Array.isArray(req.body[k])) patch[k] = req.body[k].filter(Boolean);
+    },
+  );
   if (req.body.showPaidBoard !== undefined) patch.showPaidBoard = !!req.body.showPaidBoard;
   if (req.body.defaultAmountPaise !== undefined) {
     const amount = Math.round(Number(req.body.defaultAmountPaise));

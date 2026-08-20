@@ -118,6 +118,22 @@
   height: 34px;
 }
 
+/*
+ * The club logo file. Sized by whichever class it is given (.brand-mark,
+ * .gate-crest, .crest-large), so a photo and the drawn crest are
+ * interchangeable. `contain` means a logo of any shape is never cropped.
+ */
+.logo-img {
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: transparent;
+}
+
+.brand-mark.logo-img {
+  border-radius: 7px;
+  background: rgba(253, 246, 232, 0.12);
+}
+
 .brand-text {
   min-width: 0;
 }
@@ -489,6 +505,13 @@
   padding: 0 12px;
   font-size: var(--t-sm);
   border-radius: var(--r-sm);
+}
+
+/* Full width, but a shorter bar — for a submit that should not dominate. */
+.btn-slim {
+  min-height: 38px;
+  font-size: var(--t-sm);
+  letter-spacing: 0.01em;
 }
 
 .btn-row {
@@ -1613,6 +1636,40 @@
   line-height: 1.45;
   margin-top: 8px;
   text-align: center;
+}
+
+/*
+ * Shown only when the portrait file is not on disk yet. An honest empty frame
+ * with the path on it, rather than a stand-in drawing pretending to be him.
+ */
+.photo-missing {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 16px;
+  text-align: center;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--surface-2),
+    var(--surface-2) 10px,
+    var(--surface-3) 10px,
+    var(--surface-3) 20px
+  );
+  color: var(--ink-3);
+}
+
+.photo-missing code {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 3px 6px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
 }
 
 /* --- language switch ----------------------------------------------------- */

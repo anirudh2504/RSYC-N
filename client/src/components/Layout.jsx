@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useSession } from '../context/Session.jsx';
-import { Crest, Icon } from './Ornaments.jsx';
+import { Logo, Icon } from './Ornaments.jsx';
 import { Sheet, SheetItem } from './ui.jsx';
 
 const CLUB = 'Rav Shekha Ji Yuva Club';
@@ -21,7 +21,7 @@ function TopBar({ onMenu }) {
     <header className="topbar">
       <div className="topbar-inner">
         <Link to="/" className="brand">
-          <Crest className="brand-mark" />
+          <Logo className="brand-mark" />
           <span className="brand-text">
             <span className="brand-name">{CLUB}</span>
             <span className="brand-sub">{VILLAGE}</span>
@@ -125,6 +125,7 @@ export function PublicLayout({ children }) {
     : [
         { to: '/', end: true, icon: <Icon.calendar />, label: 'Events' },
         { to: '/members', icon: <Icon.people />, label: 'Members' },
+        { to: '/join', icon: <Icon.inbox />, label: 'Request to join', short: 'Join' },
         { to: '/about', icon: <Icon.home />, label: 'About the club', short: 'About' },
         { to: '/unlock', icon: <Icon.lock />, label: 'Club fund', short: 'Fund' },
       ];
@@ -137,6 +138,7 @@ export function PublicLayout({ children }) {
         ...(session.viewer
           ? [
               { to: '/members', icon: <Icon.people />, label: 'Members board' },
+              { to: '/join', icon: <Icon.inbox />, label: 'Request to join' },
               { to: '/about', icon: <Icon.home />, label: 'About the club' },
             ]
           : []),
@@ -170,6 +172,16 @@ export function PublicLayout({ children }) {
           }}
         >
           Members board
+        </SheetItem>
+
+        <SheetItem
+          icon={<Icon.inbox />}
+          onClick={() => {
+            setMenu(false);
+            navigate('/join');
+          }}
+        >
+          Request to join
         </SheetItem>
 
         <SheetItem

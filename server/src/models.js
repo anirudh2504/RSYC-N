@@ -212,12 +212,19 @@ const settingsSchema = new Schema(
     whatsappGroupUrl: { type: String, default: '' },
     contactPhone: { type: String, default: '' },
 
+    purpose: { type: String, default: '' },
+    purposeHi: { type: String, default: '' },
+    purposePoints: { type: [String], default: [] },
+    purposePointsHi: { type: [String], default: [] },
+
     founderName: { type: String, default: '' },
     founderNameHi: { type: String, default: '' },
     founderYears: { type: String, default: '' },
     founderPhotoUrl: { type: String, default: '' },
     founderAbout: { type: String, default: '' },
     founderAboutHi: { type: String, default: '' },
+    founderContribution: { type: [String], default: [] },
+    founderContributionHi: { type: [String], default: [] },
 
     pinHash: { type: String, required: true },
     pinVersion: { type: Number, default: 1 },

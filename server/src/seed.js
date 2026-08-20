@@ -554,10 +554,51 @@ export function buildSeed() {
     founderName: 'Rao Shekha Ji',
     founderNameHi: 'राव शेखा जी',
     founderYears: '1433 – 1488',
-    founderPhotoUrl: '/rao-shekha-ji.jpg',
+    founderPhotoUrl: '/images/rao-shekha-ji.jpg',
 
     founderAboutHi:
       'राव शेखा जी का जन्म सन् 1433 में हुआ। वे अमरसर (नान) के राव मोकल के पुत्र थे और कछवाहा राजपूत वंश से थे।\n\nपरंपरा के अनुसार उनके माता-पिता को संतान की प्राप्ति शेख बुरहान की दरगाह पर मनोकामना माँगने के बाद हुई, इसीलिए बालक का नाम "शेखा" रखा गया। यह कथा आज भी इस क्षेत्र में आपसी सौहार्द की पहचान के रूप में कही जाती है।\n\nयुवावस्था में ही गद्दी सँभालने के बाद उन्होंने अपना राज्य विस्तृत किया और आमेर की अधीनता से स्वतंत्र होकर अपनी अलग पहचान बनाई। उन्हीं के नाम से शेखावत वंश चला और यह पूरा क्षेत्र आज "शेखावाटी" कहलाता है।\n\nसन् 1488 में उनका देहांत हुआ।\n\nक्लब उनका नाम इसी भाव से धारण करता है — अपने लोगों के साथ खड़े रहना और उनकी सेवा करना।',
+
+    // Why the club exists.
+    purposeHi:
+      'क्लब का उद्देश्य गाँव के युवाओं को खेलकूद और अच्छे कामों की ओर प्रेरित करना है — ताकि गाँव की नई पीढ़ी आगे बढ़े और गाँव का नाम रोशन करे।',
+    purpose:
+      'The club exists to turn the young people of the village towards sport and towards work worth doing — so that the next generation of Nangla goes further than the last.',
+
+    purposePointsHi: [
+      'खेल प्रतियोगिताएँ कराना — कबड्डी, वॉलीबॉल और दौड़',
+      'त्योहार और सांस्कृतिक कार्यक्रम आयोजित करना',
+      'रक्तदान और स्वास्थ्य शिविर लगाना',
+      'वृक्षारोपण और गाँव की साफ़-सफ़ाई',
+      'युवाओं को नशे से दूर रखकर सही दिशा देना',
+      'किसी परिवार पर आई आपात स्थिति में मदद करना',
+    ],
+    purposePoints: [
+      'Hold sports competitions — kabaddi, volleyball and races',
+      'Organise festivals and cultural programmes',
+      'Run blood donation and health camps',
+      'Plant trees and keep the village clean',
+      'Steer young people away from addiction and towards something better',
+      'Help any family in the village that hits an emergency',
+    ],
+
+    // "Contribution of Rao Shekha Ji" — a short historical section.
+    founderContributionHi: [
+      'उन्होंने अमरसर की छोटी सी जागीर को एक स्वतंत्र और सशक्त राज्य में बदला।',
+      'आमेर की अधीनता स्वीकार करने से इनकार कर अपने क्षेत्र की अलग पहचान बनाई।',
+      'उन्हीं के नाम से शेखावत वंश चला, जिसकी शाखाएँ आगे सीकर, खंडेला, झुंझुनूँ और नवलगढ़ तक फैलीं।',
+      'आज का पूरा शेखावाटी क्षेत्र उन्हीं के नाम पर जाना जाता है।',
+      'परंपरा के अनुसार उनकी सेना में पन्नी पठान भी सम्मिलित थे — उस समय के लिए यह असाधारण बात थी।',
+      'शेख बुरहान की दरगाह से जुड़ी उनकी जन्म-कथा आज भी आपसी सौहार्द की मिसाल के रूप में कही जाती है।',
+    ],
+    founderContribution: [
+      'He turned the small holding of Amarsar into an independent and capable state.',
+      'He refused to stay under the authority of Amber and won a separate standing for his territory.',
+      'The Shekhawat clan descends from him; its branches later spread to Sikar, Khandela, Jhunjhunu and Nawalgarh.',
+      'The whole Shekhawati region is known by his name to this day.',
+      'By tradition his forces included Panni Pathans alongside his own men — unusual for that time.',
+      'The story of his birth at the shrine of Sheikh Burhan is still told as an example of communities standing together.',
+    ],
 
     founderAbout:
       'Rao Shekha Ji was born in 1433, son of Rao Mokal of Amarsar (Nan), of the Kachhwaha Rajput line.\n\nBy tradition his parents were granted a son after praying at the shrine of Sheikh Burhan, and the boy was named Shekha in his honour — a story the region still tells as a mark of how its communities have lived alongside one another.\n\nHe came to the gaddi as a young man, extended his territory across what is now Shekhawati, and asserted his independence from Amber. The Shekhawat clan descends from him, and the whole region carries his name to this day.\n\nHe died in 1488.\n\nThe club takes his name for the same reason the region does: for standing with his own people and looking after them.',

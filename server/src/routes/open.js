@@ -10,6 +10,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { store } from '../store.js';
+import { notifyJoinRequest } from '../services/notify.js';
 
 const router = express.Router();
 
@@ -67,6 +68,10 @@ router.get('/about', (_req, res) => {
     about: s.about,
     aboutHi: s.aboutHi,
     rules: s.rules,
+    purpose: s.purpose,
+    purposeHi: s.purposeHi,
+    purposePoints: s.purposePoints,
+    purposePointsHi: s.purposePointsHi,
     founder: {
       name: s.founderName,
       nameHi: s.founderNameHi,
@@ -74,9 +79,12 @@ router.get('/about', (_req, res) => {
       photoUrl: s.founderPhotoUrl,
       about: s.founderAbout,
       aboutHi: s.founderAboutHi,
+      contribution: s.founderContribution,
+      contributionHi: s.founderContributionHi,
     },
-    // Names only. No phone numbers, no roles, no counts.
-    admins: store.admins().map((a) => ({ name: a.name })),
+    // Deliberately no admin names here. The club is run by the village, and
+    // naming individuals on an open page serves nobody.
+    contactPhone: s.contactPhone,
   });
 });
 
@@ -123,15 +131,44 @@ router.post('/join-request', joinLimiter, (req, res) => {
       .json({ error: 'invalid', message: 'Please enter a 10 digit mobile number.' });
   }
 
+  const settings = store.settings();
+
+  // What the visitor can send themselves, right now, with no API and no cost.
+  const clubPhone = settings.contactPhone;
+  const text =
+    `Namaste. I would like to join ${settings.groupName}, ${settings.village}.\n` +
+    `Name: ${name}\nPhone: ${phone}` +
+    (message ? `\n${message}` : '');
+  const whatsappUrl = clubPhone
+    ? `https://wa.me/91${clubPhone}?text=${encodeURIComponent(text)}`
+    : null;
+
   // A repeat request from the same number is collapsed rather than rejected,
   // so nobody gets an error for pressing the button twice.
   const existing = store
     .joinRequests()
     .find((r) => r.phone === phone && r.status === 'pending');
-  if (existing) return res.json({ ok: true });
+  if (existing) return res.json({ ok: true, whatsappUrl });
 
   store.addJoinRequest({ name, phone, message });
-  return res.json({ ok: true });
+  store.addAudit({
+    actorAdminId: null,
+    action: 'joinrequest.create',
+    category: 'join-request',
+    entityType: 'JoinRequest',
+    summary: `New join request from ${name}`,
+    ip: req.ip,
+  });
+
+  // Fire and forget. A notification failure must never lose the request.
+  notifyJoinRequest({ name, phone, message })
+    .then((r) => {
+      if (r.sent) console.log(`[rsyc] WhatsApp notified ${r.delivered}/${r.total} admin(s)`);
+      else console.log(`[rsyc] join request saved; not notified — ${r.reason || 'send failed'}`);
+    })
+    .catch((err) => console.error('[rsyc] notify error:', err.message));
+
+  return res.json({ ok: true, whatsappUrl });
 });
 
 export default router;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '../../context/Session.jsx';
-import { Crest } from '../../components/Ornaments.jsx';
+import { Logo } from '../../components/Ornaments.jsx';
 import { Button, Field, Notice, SecretInput } from '../../components/ui.jsx';
 
 /**
@@ -38,7 +38,7 @@ export default function Unlock() {
   return (
     <div className="gate">
       <div className="gate-inner">
-        <Crest className="gate-crest" />
+        <Logo className="gate-crest" />
         <h1 className="gate-title">Club fund</h1>
         <p className="gate-sub">
           Enter the club PIN to see the balance, every transaction and the member list.

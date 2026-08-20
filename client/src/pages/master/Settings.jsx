@@ -15,6 +15,13 @@ import {
 } from '../../components/ui.jsx';
 import { money } from '../../lib/format.js';
 
+/** One item per line, blanks dropped. */
+const lines = (text) =>
+  String(text || '')
+    .split('\n')
+    .map((r) => r.trim())
+    .filter(Boolean);
+
 export default function Settings() {
   const toast = useToast();
   const { data, loading, error, reload } = useFetch('/admin/settings');
@@ -27,6 +34,10 @@ export default function Settings() {
       setForm({
         ...data.settings,
         rulesText: (data.settings.rules || []).join('\n'),
+        purposeText: (data.settings.purposePoints || []).join('\n'),
+        purposeTextHi: (data.settings.purposePointsHi || []).join('\n'),
+        contribText: (data.settings.founderContribution || []).join('\n'),
+        contribTextHi: (data.settings.founderContributionHi || []).join('\n'),
         defaultAmount: String((data.settings.defaultAmountPaise || 0) / 100),
       });
     }
@@ -48,7 +59,7 @@ export default function Settings() {
         villageHi: form.villageHi,
         tagline: form.tagline,
         about: form.about,
-        rules: form.rulesText.split('\n').map((r) => r.trim()).filter(Boolean),
+        rules: lines(form.rulesText),
         bankAccountLabel: form.bankAccountLabel,
         upiId: form.upiId,
         aboutHi: form.aboutHi,
@@ -62,6 +73,12 @@ export default function Settings() {
         founderPhotoUrl: form.founderPhotoUrl,
         founderAbout: form.founderAbout,
         founderAboutHi: form.founderAboutHi,
+        purpose: form.purpose,
+        purposeHi: form.purposeHi,
+        purposePoints: lines(form.purposeText),
+        purposePointsHi: lines(form.purposeTextHi),
+        founderContribution: lines(form.contribText),
+        founderContributionHi: lines(form.contribTextHi),
         showPaidBoard: form.showPaidBoard,
         defaultAmountPaise: Math.round((Number(form.defaultAmount) || 0) * 100),
         viewerSessionDays: Number(form.viewerSessionDays) || 30,
@@ -157,6 +174,48 @@ export default function Settings() {
                 style={{ minHeight: 130 }}
                 value={form.rulesText}
                 onChange={set('rulesText')}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        <Card className="card-pad">
+          <p className="section-title" style={{ marginBottom: 12 }}>
+            Why the club exists
+          </p>
+          <div className="stack">
+            <Field label="Purpose — हिंदी" id="s-purpose-hi" hint="Shown by default.">
+              <textarea
+                id="s-purpose-hi"
+                className="textarea devanagari"
+                value={form.purposeHi || ''}
+                onChange={set('purposeHi')}
+              />
+            </Field>
+            <Field label="Purpose — English" id="s-purpose">
+              <textarea
+                id="s-purpose"
+                className="textarea"
+                value={form.purpose || ''}
+                onChange={set('purpose')}
+              />
+            </Field>
+            <Field label="What we do — हिंदी" id="s-points-hi" hint="One point per line.">
+              <textarea
+                id="s-points-hi"
+                className="textarea devanagari"
+                style={{ minHeight: 150 }}
+                value={form.purposeTextHi || ''}
+                onChange={set('purposeTextHi')}
+              />
+            </Field>
+            <Field label="What we do — English" id="s-points" hint="One point per line.">
+              <textarea
+                id="s-points"
+                className="textarea"
+                style={{ minHeight: 150 }}
+                value={form.purposeText || ''}
+                onChange={set('purposeText')}
               />
             </Field>
           </div>
@@ -304,6 +363,28 @@ export default function Settings() {
                 style={{ minHeight: 170 }}
                 value={form.founderAbout || ''}
                 onChange={set('founderAbout')}
+              />
+            </Field>
+            <Field
+              label="His contribution — हिंदी"
+              id="s-contrib-hi"
+              hint="One line from history per line. Please have someone check these."
+            >
+              <textarea
+                id="s-contrib-hi"
+                className="textarea devanagari"
+                style={{ minHeight: 170 }}
+                value={form.contribTextHi || ''}
+                onChange={set('contribTextHi')}
+              />
+            </Field>
+            <Field label="His contribution — English" id="s-contrib" hint="One line per line.">
+              <textarea
+                id="s-contrib"
+                className="textarea"
+                style={{ minHeight: 170 }}
+                value={form.contribText || ''}
+                onChange={set('contribText')}
               />
             </Field>
           </div>

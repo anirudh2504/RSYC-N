@@ -23,6 +23,25 @@ export const config = {
   entryEditWindowMinutes: 15,
 
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+
+  clubName: process.env.CLUB_NAME || 'Rav Shekha Ji Yuva Club, Nangla',
+
+  /**
+   * Meta WhatsApp Cloud API. Leave empty and the app simply does not send
+   * anything — the join form still works and still offers the visitor a
+   * wa.me button, which needs none of this.
+   */
+  whatsapp: {
+    token: process.env.WHATSAPP_TOKEN || '',
+    phoneId: process.env.WHATSAPP_PHONE_ID || '',
+    // Comma separated, full international format without +, e.g. 919829011001
+    notifyTo: (process.env.WHATSAPP_NOTIFY_TO || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    template: process.env.WHATSAPP_TEMPLATE || '',
+    templateLang: process.env.WHATSAPP_TEMPLATE_LANG || 'en',
+  },
 };
 
 export const isDemo = !config.mongoUri;

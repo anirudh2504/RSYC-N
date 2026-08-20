@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '../../context/Session.jsx';
-import { Crest } from '../../components/Ornaments.jsx';
+import { Logo } from '../../components/Ornaments.jsx';
 import { Button, Field, Notice } from '../../components/ui.jsx';
 
 export default function Login() {
@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <div className="gate">
       <div className="gate-inner">
-        <Crest className="gate-crest" />
+        <Logo className="gate-crest" />
         <h1 className="gate-title">Admin sign in</h1>
         <p className="gate-sub">Only club admins record transactions and manage members.</p>
 
