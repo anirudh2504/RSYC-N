@@ -14,6 +14,8 @@ import {
   postAdjustment,
   isLocked,
   monthTotals,
+  eventSpendPaise,
+  eventExpenses,
 } from '../services/ledger.js';
 import {
   duesForMember,
@@ -41,10 +43,12 @@ const CATEGORY = {
   'ledger.adjust': 'correction',
   'ledger.reverse': 'correction',
   'ledger.edit': 'correction',
+  'ledger.relink': 'event',
   'ledger.opening': 'correction',
   'member.create': 'member',
   'member.update': 'member',
   'member.plan': 'member',
+  'member.remove': 'member',
   'event.create': 'event',
   'event.update': 'event',
   'event.delete': 'event',
@@ -71,6 +75,34 @@ const audit = (req, action, entityType, summary, entityId = null) =>
   });
 
 const bad = (res, message) => res.status(400).json({ error: 'invalid', message });
+
+/**
+ * Photos arrive as a compressed data URI, already scaled by the browser before
+ * it sent them. Anything well over the cap means that compression did not run,
+ * so it is refused rather than stored.
+ *
+ * Member portraits are small squares; event photos are viewed full width in a
+ * lightbox, so they get a larger allowance.
+ */
+const MAX_MEMBER_PHOTO_CHARS = 400_000;
+const MAX_EVENT_PHOTO_CHARS = 900_000;
+
+function readImage(value, maxChars) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+
+  const url = String(value);
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(url)) {
+    return { error: 'That photo could not be read. Choose a JPG or PNG.' };
+  }
+  if (url.length > maxChars) {
+    return { error: 'That photo is too large after compression. Try a smaller one.' };
+  }
+  return url;
+}
+
+const readPhoto = (value) => readImage(value, MAX_MEMBER_PHOTO_CHARS);
+const readEventPhoto = (value) => readImage(value, MAX_EVENT_PHOTO_CHARS);
 
 // ---------------------------------------------------------------- dashboard
 router.get('/dashboard', (req, res) => {
@@ -249,6 +281,42 @@ router.patch('/transactions/:id', (req, res) => {
   return res.json({ entry: decorate(store.findEntry(entry.id)), balancePaise: balancePaise() });
 });
 
+/**
+ * Link an expense to an event, or unlink it.
+ *
+ * This touches a locked entry, which the append-only rule normally forbids —
+ * but it changes no amount, no direction, no date and no reason. It only says
+ * which event the money was for. The balance cannot move, so re-filing an
+ * expense is a categorisation, not an edit to the accounts. It is audited all
+ * the same.
+ */
+router.post('/transactions/:id/event', (req, res) => {
+  const entry = store.findEntry(req.params.id);
+  if (!entry) return res.status(404).json({ error: 'not_found', message: 'Entry not found.' });
+  if (entry.direction !== 'debit') {
+    return bad(res, 'Only money going out can belong to an event.');
+  }
+
+  const eventId = req.body.eventId || null;
+  const event = eventId ? store.findEvent(eventId) : null;
+  if (eventId && !event) return bad(res, 'That event no longer exists.');
+
+  const previous = entry.eventId ? store.findEvent(entry.eventId) : null;
+  store.updateEntry(entry.id, { eventId });
+
+  audit(
+    req,
+    'ledger.relink',
+    'LedgerEntry',
+    event
+      ? `Linked an expense of Rs ${entry.amountPaise / 100} to ${event.title}`
+      : `Unlinked an expense of Rs ${entry.amountPaise / 100} from ${previous ? previous.title : 'an event'}`,
+    entry.id,
+  );
+
+  return res.json({ entry: decorate(store.findEntry(entry.id)) });
+});
+
 router.post('/transactions/:id/reverse', (req, res) => {
   const reason = String(req.body.reason || '').trim();
   if (reason.length < 5) return bad(res, 'Write a short reason for the reversal.');
@@ -366,12 +434,16 @@ router.post('/members', (req, res) => {
   if (!/^[0-9]{10}$/.test(phone)) return bad(res, 'Enter a 10 digit mobile number.');
   if (isEnabled && amountPaise <= 0) return bad(res, 'Enter the monthly amount.');
 
+  const photo = readPhoto(req.body.photoUrl);
+  if (photo && photo.error) return bad(res, photo.error);
+
   const joinedPeriod = String(req.body.joinedPeriod || currentPeriod());
 
   const member = store.addMember({
     name,
     fatherName,
     phone,
+    photoUrl: photo || null,
     joinedOn: new Date(`${joinedPeriod}-01T06:00:00.000Z`).toISOString(),
     joinedPeriod,
     createdByAdminId: req.admin.id,
@@ -413,6 +485,9 @@ router.patch('/members/:id', (req, res) => {
   if (req.body.status !== undefined && ['active', 'left'].includes(req.body.status)) {
     patch.status = req.body.status;
   }
+  const photo = readPhoto(req.body.photoUrl);
+  if (photo && photo.error) return bad(res, photo.error);
+  if (photo !== undefined) patch.photoUrl = photo;
 
   store.updateMember(member.id, patch);
   audit(req, 'member.update', 'Member', `Updated ${member.name}`, member.id);
@@ -460,6 +535,41 @@ router.put('/members/:id/plan', (req, res) => {
     member.id,
   );
   return res.json({ member: duesForMember(member.id) });
+});
+
+/**
+ * Removing a member.
+ *
+ * Their status becomes 'left' and their contribution plan is closed off at last
+ * month, so nothing further is ever due from them. Every rupee they paid stays
+ * in the ledger exactly where it was and the balance does not move — deleting
+ * the row would silently change the club's accounts, which the ledger rules do
+ * not allow. They simply stop appearing in the lists.
+ */
+router.delete('/members/:id', (req, res) => {
+  const member = store.findMember(req.params.id);
+  if (!member) return res.status(404).json({ error: 'not_found', message: 'Member not found.' });
+  if (member.status === 'left') {
+    return bad(res, 'That member has already been removed.');
+  }
+
+  const from = currentPeriod();
+  const [y, m] = from.split('-').map(Number);
+  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+  store.closePlans(member.id, prev);
+
+  store.updateMember(member.id, { status: 'left' });
+
+  const kept = store.entries().filter((e) => e.memberId === member.id).length;
+  audit(
+    req,
+    'member.remove',
+    'Member',
+    `Removed ${member.name} from the club (${kept} ledger entries kept)`,
+    member.id,
+  );
+
+  return res.json({ ok: true, entriesKept: kept });
 });
 
 // ------------------------------------------------------------------ pending
@@ -513,6 +623,12 @@ router.get('/events', (_req, res) => {
   });
 });
 
+router.get('/events/:id', (req, res) => {
+  const event = store.findEvent(req.params.id);
+  if (!event) return res.status(404).json({ error: 'not_found', message: 'Event not found.' });
+  return res.json({ event, spendPaise: eventSpendPaise(event.id), expenses: eventExpenses(event.id) });
+});
+
 router.post('/events', (req, res) => {
   const title = String(req.body.title || '').trim();
   if (title.length < 3) return bad(res, 'Give the event a title.');
@@ -557,37 +673,85 @@ router.patch('/events/:id', (req, res) => {
   if (Array.isArray(req.body.tags)) patch.tags = req.body.tags.slice(0, 6);
   if (req.body.palette !== undefined) patch.palette = Number(req.body.palette) || 0;
   if (req.body.isPublished !== undefined) patch.isPublished = !!req.body.isPublished;
-  if (Array.isArray(req.body.photos)) patch.photos = req.body.photos;
+
+  const cover = readEventPhoto(req.body.coverUrl);
+  if (cover && cover.error) return bad(res, cover.error);
+  if (cover !== undefined) patch.coverUrl = cover;
 
   store.updateEvent(event.id, patch);
   audit(req, 'event.update', 'Event', `Updated event: ${event.title}`, event.id);
   return res.json({ event: store.findEvent(event.id) });
 });
 
+const MAX_PHOTOS_PER_EVENT = 24;
+
+/** Add one photo. The client sends them one at a time to keep each body small. */
 router.post('/events/:id/photos', (req, res) => {
   const event = store.findEvent(req.params.id);
   if (!event) return res.status(404).json({ error: 'not_found', message: 'Event not found.' });
 
-  const count = Math.min(Math.max(Number(req.body.count) || 1, 1), 8);
-  const photos = [...event.photos];
-  for (let i = 0; i < count; i += 1) {
-    photos.push({
-      id: `${event.id}_p${photos.length + 1}_${Date.now()}${i}`,
-      seed: `${event.id}-${photos.length + i}-${Date.now()}`,
-      caption: '',
-      order: photos.length,
-    });
+  if (event.photos.length >= MAX_PHOTOS_PER_EVENT) {
+    return bad(res, `An event can hold ${MAX_PHOTOS_PER_EVENT} photos. Remove one first.`);
   }
+
+  const image = readEventPhoto(req.body.photoUrl);
+  if (image && image.error) return bad(res, image.error);
+  if (!image) return bad(res, 'No photo was sent.');
+
+  const photos = [
+    ...event.photos,
+    {
+      id: `${event.id}_p${Date.now().toString(36)}${event.photos.length}`,
+      url: image,
+      seed: '',
+      caption: String(req.body.caption || '').trim(),
+      order: event.photos.length,
+    },
+  ];
+
   store.updateEvent(event.id, { photos });
-  audit(req, 'event.photos', 'Event', `Added ${count} photos to ${event.title}`, event.id);
+  audit(req, 'event.photos', 'Event', `Added a photo to ${event.title}`, event.id);
+  return res.json({ event: store.findEvent(event.id) });
+});
+
+/** Replace the image on one photo, or edit its caption. */
+router.patch('/events/:id/photos/:photoId', (req, res) => {
+  const event = store.findEvent(req.params.id);
+  if (!event) return res.status(404).json({ error: 'not_found', message: 'Event not found.' });
+
+  const target = event.photos.find((p) => p.id === req.params.photoId);
+  if (!target) return res.status(404).json({ error: 'not_found', message: 'Photo not found.' });
+
+  const image = readEventPhoto(req.body.photoUrl);
+  if (image && image.error) return bad(res, image.error);
+
+  const photos = event.photos.map((p) =>
+    p.id !== target.id
+      ? p
+      : {
+          ...p,
+          // Swapping in a real photo retires the generated artwork behind it.
+          url: image !== undefined ? image : p.url,
+          seed: image ? '' : p.seed,
+          caption: req.body.caption !== undefined ? String(req.body.caption).trim() : p.caption,
+        },
+  );
+
+  store.updateEvent(event.id, { photos });
+  audit(req, 'event.photos', 'Event', `Updated a photo on ${event.title}`, event.id);
   return res.json({ event: store.findEvent(event.id) });
 });
 
 router.delete('/events/:id/photos/:photoId', (req, res) => {
   const event = store.findEvent(req.params.id);
   if (!event) return res.status(404).json({ error: 'not_found', message: 'Event not found.' });
-  const photos = event.photos.filter((p) => p.id !== req.params.photoId);
+
+  const photos = event.photos
+    .filter((p) => p.id !== req.params.photoId)
+    .map((p, i) => ({ ...p, order: i }));
+
   store.updateEvent(event.id, { photos });
+  audit(req, 'event.photos', 'Event', `Removed a photo from ${event.title}`, event.id);
   return res.json({ event: store.findEvent(event.id) });
 });
 

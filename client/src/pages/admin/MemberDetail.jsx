@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
-import { Icon } from '../../components/Ornaments.jsx';
+import { Icon, MemberAvatar } from '../../components/Ornaments.jsx';
+import FilePicker from '../../components/FilePicker.jsx';
 import {
   Button,
   Card,
   CardHead,
+  Confirm,
   ErrorState,
   Field,
   Loading,
@@ -18,10 +20,12 @@ import {
   useToast,
 } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
-import { initials, money, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
+import { money, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
+import { compressImageFile } from '../../lib/image.js';
 
 export default function MemberDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const toast = useToast();
   const { data, loading, error, reload } = useFetch(`/admin/members/${id}`, [id]);
 
@@ -30,6 +34,9 @@ export default function MemberDetail() {
   const [enabled, setEnabled] = useState(true);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [removing, setRemoving] = useState(false);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   if (loading) return <Loading rows={5} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -62,6 +69,46 @@ export default function MemberDetail() {
     }
   };
 
+  const savePhoto = async (file) => {
+    if (!file) return;
+    setPhotoBusy(true);
+    try {
+      const photoUrl = await compressImageFile(file);
+      await api.patch(`/admin/members/${id}`, { photoUrl });
+      toast('Photo updated', 'ok');
+      reload();
+    } catch (err) {
+      toast(err.message, 'bad');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const clearPhoto = async () => {
+    setPhotoBusy(true);
+    try {
+      await api.patch(`/admin/members/${id}`, { photoUrl: '' });
+      toast('Photo removed', 'ok');
+      reload();
+    } catch (err) {
+      toast(err.message, 'bad');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removeMember = async () => {
+    setRemoveBusy(true);
+    try {
+      await api.del(`/admin/members/${id}`);
+      toast(`${m.name} removed from the club`, 'ok');
+      navigate('/admin/members');
+    } catch (err) {
+      toast(err.message, 'bad');
+      setRemoveBusy(false);
+    }
+  };
+
   const remind = async () => {
     try {
       const res = await api.post('/admin/reminders', { memberId: id });
@@ -77,18 +124,30 @@ export default function MemberDetail() {
     <>
       <BackLink to="/admin/members">All members</BackLink>
 
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
-        <span className="avatar" style={{ width: 54, height: 54, fontSize: 20 }} aria-hidden="true">
-          {initials(m.name)}
-        </span>
-        <div style={{ minWidth: 0 }}>
-          <h1 className="page-title" style={{ fontSize: 'var(--t-xl)' }}>
+      <div className="photo-pick" style={{ marginBottom: 16 }}>
+        <div className="photo-pick-preview">
+          {m.photoUrl ? <img src={m.photoUrl} alt={m.name} /> : <MemberAvatar name={m.name} />}
+        </div>
+
+        <div className="photo-pick-body">
+          <h1 className="page-title" style={{ fontSize: 'var(--t-lg)' }}>
             {m.name}
           </h1>
           {m.fatherName ? <p className="small muted">S/o {m.fatherName}</p> : null}
           <p className="small muted num">
-            {m.phone} · member since {periodLabel(m.joinedPeriod)}
+            {m.phone} · since {periodLabel(m.joinedPeriod)}
           </p>
+
+          <div className="wrap" style={{ marginTop: 10 }}>
+            <FilePicker onPick={savePhoto} disabled={photoBusy}>
+              {photoBusy ? 'Saving…' : m.photoUrl ? 'Change photo' : 'Add photo'}
+            </FilePicker>
+            {m.photoUrl ? (
+              <Button variant="ghost" size="sm" onClick={clearPhoto} disabled={photoBusy}>
+                Remove
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -259,9 +318,49 @@ export default function MemberDetail() {
         </div>
       </Sheet>
 
+      <div style={{ margin: '26px 0 12px' }}>
+        <Rule label="Danger zone" />
+      </div>
+
+      <Card className="card-pad">
+        <div className="row-between">
+          <div style={{ minWidth: 0, paddingRight: 12 }}>
+            <p style={{ fontWeight: 700 }}>Remove from the club</p>
+            <p className="small muted">
+              Takes them off the members list and stops any further dues. Their payments stay in
+              the ledger.
+            </p>
+          </div>
+          <Button variant="danger" size="sm" onClick={() => setRemoving(true)}>
+            Remove
+          </Button>
+        </div>
+      </Card>
+
       <p className="tiny muted center" style={{ marginTop: 18 }}>
         Joined {shortDate(m.joinedPeriod ? `${m.joinedPeriod}-01` : null)}
       </p>
+
+      <Confirm
+        open={removing}
+        title={`Remove ${m.name} from the club?`}
+        busy={removeBusy}
+        confirmLabel="Yes, remove"
+        onCancel={() => setRemoving(false)}
+        onConfirm={removeMember}
+      >
+        <p style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
+          They will no longer appear in the members list, the directory, or the monthly collection,
+          and nothing further will be due from them.
+        </p>
+        <div className="notice-box notice-info" style={{ marginTop: 12 }}>
+          The <strong>{money(m.totalPaidPaise)}</strong> they have paid stays in the ledger and the
+          club balance does not change. Nothing is deleted from the accounts.
+        </div>
+        <p className="hint" style={{ marginTop: 10 }}>
+          This cannot be undone from the app.
+        </p>
+      </Confirm>
     </>
   );
 }

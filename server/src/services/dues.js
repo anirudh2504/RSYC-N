@@ -82,6 +82,7 @@ export function duesForMember(memberId, upto = currentPeriod()) {
     name: member.name,
     fatherName: member.fatherName || '',
     phone: member.phone,
+    photoUrl: member.photoUrl || null,
     status: member.status,
     joinedPeriod: member.joinedPeriod,
     monthlyAmountPaise: plan ? plan.amountPaise : 0,

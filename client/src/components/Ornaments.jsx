@@ -178,6 +178,20 @@ export function EventArt({ seed, palette = 0, className }) {
   );
 }
 
+/**
+ * An event picture: the real photograph if one has been uploaded, otherwise the
+ * drawn panel. Seeded events and any event without photos keep their artwork,
+ * so the galleries are never empty and a broken file never leaves a gap.
+ */
+export function EventImage({ url, seed, palette = 0, alt = '' }) {
+  const [failed, setFailed] = useState(false);
+
+  if (url && !failed) {
+    return <img src={url} alt={alt} onError={() => setFailed(true)} />;
+  }
+  return <EventArt seed={seed} palette={palette} />;
+}
+
 /* ------------------------------------------------------------- empty mark */
 
 export function EmptyMark({ className }) {

@@ -1159,6 +1159,16 @@
   padding: 12px 14px 14px;
 }
 
+/* Admin-only footer strip on an event tile, holding the delete button. */
+.tile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+
 .event-title {
   font-family: var(--display);
   font-size: var(--t-lg);
@@ -1205,6 +1215,37 @@
   place-items: center;
   font-size: 15px;
   line-height: 1;
+  z-index: 2;
+}
+
+/* Sits across the bottom of a gallery tile and swaps that one picture. */
+.photo-replace {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: #fdf6e8;
+  background: rgba(20, 16, 10, 0.68);
+  cursor: pointer;
+}
+
+.photo-replace:hover {
+  background: rgba(20, 16, 10, 0.85);
+}
+
+/* Real photographs fill their frame instead of stretching. */
+.event-cover img,
+.event-hero img,
+.gallery-item img,
+.lightbox-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* --- lightbox ------------------------------------------------------------ */
@@ -1842,6 +1883,45 @@
   width: 15px;
   height: 15px;
   flex: none;
+}
+
+/* ---- photo picker on the add-member form ---- */
+.photo-pick {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+
+.photo-pick-preview {
+  flex: none;
+  width: 82px;
+  height: 82px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+}
+
+.photo-pick-preview img,
+.photo-pick-preview svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-pick-body {
+  min-width: 0;
+  flex: 1;
+}
+
+/* the file input is hidden, so its label has to look and behave like a button */
+.photo-pick label.btn {
+  cursor: pointer;
 }
 
 .join-card {

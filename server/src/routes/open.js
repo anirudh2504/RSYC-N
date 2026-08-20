@@ -25,6 +25,7 @@ function openEvent(e) {
     eventDate: e.eventDate,
     tags: e.tags,
     palette: e.palette,
+    coverUrl: e.coverUrl || '',
     photos: e.photos,
   };
 }

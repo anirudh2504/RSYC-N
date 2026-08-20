@@ -135,6 +135,7 @@ const eventSchema = new Schema(
     eventDate: { type: Date, required: true },
     tags: { type: [String], default: [] },
     palette: { type: Number, default: 0 },
+    coverUrl: { type: String, default: '' },
     photos: { type: [photoSchema], default: [] },
     isPublished: { type: Boolean, default: false },
     createdByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin' },

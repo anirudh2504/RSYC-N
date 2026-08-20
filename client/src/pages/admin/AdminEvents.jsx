@@ -1,11 +1,11 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
-import { EventArt, Icon } from '../../components/Ornaments.jsx';
+import { EventImage, Icon } from '../../components/Ornaments.jsx';
 import {
   Button,
-  Card,
-  CardHead,
+  Confirm,
   Empty,
   ErrorState,
   Field,
@@ -15,68 +15,105 @@ import {
   Sheet,
   useToast,
 } from '../../components/ui.jsx';
-import { dateInputValue, shortDate, todayInput } from '../../lib/format.js';
+import { dayMonth, todayInput } from '../../lib/format.js';
 
-const BLANK = {
-  title: '',
-  titleHi: '',
-  description: '',
-  eventDate: todayInput(),
-  tags: '',
-  palette: 0,
-  isPublished: true,
-};
+/**
+ * The events list, laid out as the same tiles the village sees. Everything you
+ * can do to one event lives inside that event, on its own page — this screen
+ * only creates them and shows what exists.
+ */
+
+function EventTile({ event, onDelete }) {
+  const date = new Date(event.eventDate);
+  const upcoming = date.getTime() > Date.now();
+
+  return (
+    // A div, not a Link — the delete button must not sit inside the link, or
+    // pressing it would navigate as well.
+    <div className="event-card">
+      <Link to={`/admin/events/${event.id}`}>
+        <div className="event-cover">
+          <EventImage
+            url={event.coverUrl}
+            seed={event.slug}
+            palette={event.palette}
+            alt={event.title}
+          />
+          <div className="event-date-badge">
+            <div className="d num">{date.getDate()}</div>
+            <div className="m">{dayMonth(event.eventDate).split(' ')[1]}</div>
+          </div>
+          {!event.isPublished ? (
+            <span className="event-flag">Draft</span>
+          ) : upcoming ? (
+            <span className="event-flag">Upcoming</span>
+          ) : null}
+        </div>
+
+        <div className="event-body">
+          <h3 className="event-title">{event.title}</h3>
+          {event.titleHi ? <p className="event-title-hi">{event.titleHi}</p> : null}
+          <p className="small muted" style={{ marginTop: 6 }}>
+            {event.photoCount} {event.photoCount === 1 ? 'photo' : 'photos'}
+            {event.coverUrl ? ' · cover set' : ''}
+          </p>
+        </div>
+      </Link>
+
+      <div className="tile-actions">
+        <Button variant="danger" size="sm" onClick={() => onDelete(event)}>
+          Delete event
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminEvents() {
   const toast = useToast();
+  const navigate = useNavigate();
   const { data, loading, error, reload } = useFetch('/admin/events');
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(BLANK);
+
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState('');
+  const [eventDate, setEventDate] = useState(todayInput());
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [deleting, setDeleting] = useState(null);
+
+  const removeEvent = async () => {
+    setBusy(true);
+    try {
+      await api.del(`/admin/events/${deleting.id}`);
+      toast(`“${deleting.title}” deleted`, 'ok');
+      setDeleting(null);
+      reload();
+    } catch (err) {
+      toast(err.message, 'bad');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (loading) return <Loading rows={4} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   const events = data ? data.events : [];
 
-  const openNew = () => {
-    setEditing({ id: null });
-    setForm(BLANK);
-    setFormError('');
-  };
-
-  const openEdit = (event) => {
-    setEditing(event);
-    setForm({
-      title: event.title,
-      titleHi: event.titleHi || '',
-      description: event.description || '',
-      eventDate: dateInputValue(event.eventDate),
-      tags: (event.tags || []).join(', '),
-      palette: event.palette || 0,
-      isPublished: event.isPublished,
-    });
-    setFormError('');
-  };
-
-  const save = async () => {
+  /** Create it with the bare minimum, then open it to fill in the rest. */
+  const create = async () => {
     setBusy(true);
     setFormError('');
     try {
-      const body = {
-        ...form,
-        eventDate: new Date(`${form.eventDate}T06:00:00`).toISOString(),
-        tags: form.tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
-      };
-      if (editing.id) await api.patch(`/admin/events/${editing.id}`, body);
-      else await api.post('/admin/events', body);
-      toast(editing.id ? 'Event updated' : 'Event created', 'ok');
-      setEditing(null);
-      reload();
+      const res = await api.post('/admin/events', {
+        title,
+        eventDate: new Date(`${eventDate}T06:00:00`).toISOString(),
+        isPublished: false,
+      });
+      toast('Event created as a draft', 'ok');
+      setCreating(false);
+      setTitle('');
+      navigate(`/admin/events/${res.event.id}`);
     } catch (err) {
       setFormError(err.message);
     } finally {
@@ -84,194 +121,103 @@ export default function AdminEvents() {
     }
   };
 
-  const addPhotos = async (event) => {
-    try {
-      await api.post(`/admin/events/${event.id}/photos`, { count: 3 });
-      toast('Photos added', 'ok');
-      reload();
-    } catch (err) {
-      toast(err.message, 'bad');
-    }
-  };
-
-  const removePhoto = async (event, photoId) => {
-    try {
-      await api.del(`/admin/events/${event.id}/photos/${photoId}`);
-      reload();
-    } catch (err) {
-      toast(err.message, 'bad');
-    }
-  };
-
-  const remove = async (event) => {
-    try {
-      await api.del(`/admin/events/${event.id}`);
-      toast('Event deleted', 'ok');
-      setEditing(null);
-      reload();
-    } catch (err) {
-      toast(err.message, 'bad');
-    }
-  };
-
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
   return (
     <>
-      <PageHead eyebrow="Events" title="Manage events" sub="This is the only part of the site open to everyone." />
+      <PageHead
+        eyebrow="Events"
+        title="Manage events"
+        sub="Open an event to change its photos, details or to delete it."
+      />
 
-      <Button block style={{ marginBottom: 16 }} onClick={openNew}>
-        <Icon.plus />
-        Create an event
-      </Button>
+      <div className="row-between" style={{ marginBottom: 16 }}>
+        <p className="small muted">
+          {events.length} {events.length === 1 ? 'event' : 'events'}
+        </p>
+        <Button
+          size="sm"
+          onClick={() => {
+            setTitle('');
+            setEventDate(todayInput());
+            setFormError('');
+            setCreating(true);
+          }}
+        >
+          <Icon.plus />
+          Create event
+        </Button>
+      </div>
 
       {events.length === 0 ? (
         <Empty title="No events yet">Create the first one.</Empty>
       ) : (
-        <div className="stack">
+        <div className="event-grid">
           {events.map((event) => (
-            <Card key={event.id}>
-              <div className="event-cover" style={{ aspectRatio: '16 / 7' }}>
-                <EventArt seed={event.slug} palette={event.palette} />
-                {!event.isPublished ? <span className="event-flag">Draft</span> : null}
-              </div>
-
-              <div className="card-pad">
-                <div className="row-between">
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontWeight: 700 }}>{event.title}</p>
-                    <p className="small muted">
-                      {shortDate(event.eventDate)} · {event.photoCount} photos
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(event)}>
-                    <Icon.edit />
-                    Edit
-                  </Button>
-                </div>
-
-                {event.photos && event.photos.length ? (
-                  <div className="gallery" style={{ marginTop: 12 }}>
-                    {event.photos.map((p) => (
-                      <div key={p.id} className="gallery-item">
-                        <EventArt seed={p.seed} palette={event.palette} />
-                        <button
-                          type="button"
-                          className="photo-remove"
-                          onClick={() => removePhoto(event, p.id)}
-                          aria-label="Remove photo"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  block
-                  style={{ marginTop: 12 }}
-                  onClick={() => addPhotos(event)}
-                >
-                  <Icon.plus />
-                  Add photos
-                </Button>
-              </div>
-            </Card>
+            <EventTile key={event.id} event={event} onDelete={setDeleting} />
           ))}
         </div>
       )}
 
-      <Sheet
-        open={!!editing}
-        title={editing && editing.id ? 'Edit event' : 'New event'}
-        onClose={() => setEditing(null)}
+      <Confirm
+        open={!!deleting}
+        title={deleting ? `Delete “${deleting.title}”?` : ''}
+        busy={busy}
+        confirmLabel="Yes, delete"
+        onCancel={() => setDeleting(null)}
+        onConfirm={removeEvent}
       >
+        {deleting ? (
+          <>
+            <p style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
+              The event and its {deleting.photoCount}{' '}
+              {deleting.photoCount === 1 ? 'photo' : 'photos'} will be gone from the site.
+            </p>
+            <div className="notice-box notice-info" style={{ marginTop: 12 }}>
+              Any money spent on it stays in the ledger and the club balance does not change. Those
+              entries simply stop being linked to an event.
+            </div>
+            <p className="hint" style={{ marginTop: 10 }}>
+              This cannot be undone.
+            </p>
+          </>
+        ) : null}
+      </Confirm>
+
+      <Sheet open={creating} title="New event" onClose={() => setCreating(false)}>
         <div className="sheet-pad stack">
           <Notice kind="error">{formError}</Notice>
+          <Notice kind="info">
+            It starts as a draft, so the village will not see it until you publish.
+          </Notice>
 
-          <Field label="Title" id="ev-title">
-            <input id="ev-title" className="input" value={form.title} onChange={set('title')} />
-          </Field>
-
-          <Field label="Title in Hindi" id="ev-title-hi" hint="Optional. Shown under the English title.">
+          <Field label="Title" id="new-title">
             <input
-              id="ev-title-hi"
-              className="input devanagari"
-              value={form.titleHi}
-              onChange={set('titleHi')}
+              id="new-title"
+              className="input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Kabaddi Pratiyogita"
+              autoFocus
             />
           </Field>
 
-          <Field label="Date" id="ev-date">
+          <Field label="Date" id="new-date">
             <input
-              id="ev-date"
+              id="new-date"
               type="date"
               className="input"
-              value={form.eventDate}
-              onChange={set('eventDate')}
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
             />
           </Field>
-
-          <Field label="Description" id="ev-desc">
-            <textarea
-              id="ev-desc"
-              className="textarea"
-              style={{ minHeight: 120 }}
-              value={form.description}
-              onChange={set('description')}
-            />
-          </Field>
-
-          <Field label="Tags" id="ev-tags" hint="Comma separated. Hindi is fine.">
-            <input id="ev-tags" className="input" value={form.tags} onChange={set('tags')} />
-          </Field>
-
-          <Field label="Artwork colour" id="ev-palette">
-            <select id="ev-palette" className="select" value={form.palette} onChange={set('palette')}>
-              {['Indigo court', 'Holi oxblood', 'Neem green', 'Sandstone', 'Dusk', 'Stepwell blue'].map(
-                (label, i) => (
-                  <option key={label} value={i}>
-                    {label}
-                  </option>
-                ),
-              )}
-            </select>
-          </Field>
-
-          <div className="segmented">
-            <button
-              type="button"
-              className={form.isPublished ? 'on-credit' : ''}
-              onClick={() => setForm((f) => ({ ...f, isPublished: true }))}
-            >
-              Published
-            </button>
-            <button
-              type="button"
-              className={!form.isPublished ? 'on-debit' : ''}
-              onClick={() => setForm((f) => ({ ...f, isPublished: false }))}
-            >
-              Draft
-            </button>
-          </div>
 
           <div className="btn-row">
-            <Button variant="ghost" onClick={() => setEditing(null)}>
+            <Button variant="ghost" onClick={() => setCreating(false)}>
               Cancel
             </Button>
-            <Button onClick={save} disabled={busy || form.title.trim().length < 3}>
-              {busy ? 'Saving…' : 'Save'}
+            <Button onClick={create} disabled={busy || title.trim().length < 3}>
+              {busy ? 'Creating…' : 'Create & open'}
             </Button>
           </div>
-
-          {editing && editing.id ? (
-            <Button variant="danger" block onClick={() => remove(editing)}>
-              Delete this event
-            </Button>
-          ) : null}
         </div>
       </Sheet>
     </>

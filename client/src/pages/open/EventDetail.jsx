@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFetch, useSession } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
-import { EventArt } from '../../components/Ornaments.jsx';
+import { EventImage } from '../../components/Ornaments.jsx';
 import { Card, CardHead, ErrorState, Loading, Rule } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
 import { money, shortDate } from '../../lib/format.js';
@@ -32,7 +32,7 @@ export default function EventDetail() {
       <BackLink to="/events">All events</BackLink>
 
       <div className="event-hero">
-        <EventArt seed={event.slug} palette={event.palette} />
+        <EventImage url={event.coverUrl} seed={event.slug} palette={event.palette} alt={event.title} />
       </div>
 
       <p className="eyebrow">
@@ -78,7 +78,7 @@ export default function EventDetail() {
                 onClick={() => setLightbox(photo)}
                 aria-label="Open photo"
               >
-                <EventArt seed={photo.seed} palette={event.palette} />
+                <EventImage url={photo.url} seed={photo.seed} palette={event.palette} alt={photo.caption} />
               </button>
             ))}
           </div>
@@ -124,7 +124,7 @@ export default function EventDetail() {
           </button>
           <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
             <div style={{ aspectRatio: '1' }}>
-              <EventArt seed={lightbox.seed} palette={event.palette} />
+              <EventImage url={lightbox.url} seed={lightbox.seed} palette={event.palette} alt={lightbox.caption} />
             </div>
           </div>
         </div>

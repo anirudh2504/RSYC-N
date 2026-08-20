@@ -3,8 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
+import { MemberAvatar } from '../../components/Ornaments.jsx';
+import FilePicker from '../../components/FilePicker.jsx';
 import { Button, Card, Field, Notice, PageHead, useToast } from '../../components/ui.jsx';
 import { currentPeriod, money, periodLabel } from '../../lib/format.js';
+import { compressImageFile, dataUrlBytes } from '../../lib/image.js';
 
 /** Four things, as the club asked: name, phone, collection on or off, amount. */
 export default function MemberForm() {
@@ -19,8 +22,18 @@ export default function MemberForm() {
   const [enabled, setEnabled] = useState(true);
   const [amount, setAmount] = useState('');
   const [joinedPeriod, setJoinedPeriod] = useState(currentPeriod());
+  const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const pickPhoto = async (file) => {
+    try {
+      setPhoto(await compressImageFile(file));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const defaultPaise = membersQuery.data ? membersQuery.data.defaultAmountPaise : 20000;
   const effectiveAmount = amount === '' ? String(defaultPaise / 100) : amount;
@@ -44,6 +57,7 @@ export default function MemberForm() {
         isEnabled: enabled,
         amountPaise: Math.round((Number(effectiveAmount) || 0) * 100),
         joinedPeriod,
+        photoUrl: photo,
       });
       toast(`${name} added`, 'ok');
       navigate(`/admin/members/${res.member.memberId}`);
@@ -62,6 +76,36 @@ export default function MemberForm() {
       <Card className="card-pad">
         <form className="stack" onSubmit={submit}>
           <Notice kind="error">{error}</Notice>
+
+          {/* Optional. Falls back to the drawn medallion if nothing is chosen. */}
+          <div className="photo-pick">
+            <div className="photo-pick-preview">
+              {photo ? (
+                <img src={photo} alt="" />
+              ) : (
+                <MemberAvatar name={name || 'नया सदस्य'} />
+              )}
+            </div>
+
+            <div className="photo-pick-body">
+              <p className="label">Photo</p>
+              <p className="hint" style={{ marginBottom: 8 }}>
+                {photo
+                  ? `Ready — about ${Math.round(dataUrlBytes(photo) / 1024)} KB`
+                  : 'Optional. Squared and shrunk automatically before saving.'}
+              </p>
+              <div className="wrap">
+                <FilePicker onPick={pickPhoto}>
+                  {photo ? 'Change photo' : 'Choose photo'}
+                </FilePicker>
+                {photo ? (
+                  <Button variant="ghost" size="sm" onClick={() => setPhoto(null)}>
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
           <Field label="Full name" id="m-name">
             <input

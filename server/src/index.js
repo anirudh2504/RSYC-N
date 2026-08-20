@@ -15,7 +15,8 @@ const app = express();
 // Behind a proxy in production, so req.ip is the real client for rate limiting.
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '1mb' }));
+// Photos travel as base64 data URIs, one per request.
+app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
 app.use(
   cors({

@@ -35,21 +35,20 @@ export default function AdminMembers() {
     <>
       <PageHead eyebrow="Members" title="Manage members" sub="Sorted by who is furthest behind." />
 
-      <Link to="/admin/members/new" style={{ display: 'block', marginBottom: 14 }}>
-        <button type="button" className="btn btn-block">
+      <div className="row-between" style={{ marginBottom: 10, gap: 8 }}>
+        <input
+          className="input"
+          placeholder="Search by name or number"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search members"
+        />
+        {/* A compact action beside the search, not a banner across the page. */}
+        <Link to="/admin/members/new" className="btn btn-sm" style={{ flex: 'none' }}>
           <Icon.plus />
-          Add a member
-        </button>
-      </Link>
-
-      <input
-        className="input"
-        placeholder="Search by name or number"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        style={{ marginBottom: 10 }}
-        aria-label="Search members"
-      />
+          Add
+        </Link>
+      </div>
 
       <div className="scroll-x" style={{ marginBottom: 14 }}>
         <div className="scroll-x-inner">

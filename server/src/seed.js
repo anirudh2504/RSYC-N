@@ -448,6 +448,7 @@ export function buildSeed() {
     eventDate: dateFor(e.monthOffset, e.day),
     tags: e.tags,
     palette: e.palette,
+    coverUrl: '',
     photos: Array.from({ length: e.photos }, (_, i) => ({
       id: `${e.id}_p${i + 1}`,
       seed: `${e.id}-${i}`,

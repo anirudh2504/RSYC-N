@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
 import { Button, Card, CardHead, Field, Loading, Notice, PageHead, useToast } from '../../components/ui.jsx';
@@ -16,12 +16,15 @@ import { amountInWords, money, periodLabel, todayInput } from '../../lib/format.
 export default function AddTransaction() {
   const navigate = useNavigate();
   const toast = useToast();
+  // Arriving from an event page pre-selects that event and money-out.
+  const [params] = useSearchParams();
+  const fromEvent = params.get('eventId') || '';
 
   const membersQuery = useFetch('/admin/members');
   const eventsQuery = useFetch('/admin/events');
   const recentQuery = useFetch('/admin/transactions?limit=5');
 
-  const [direction, setDirection] = useState('credit');
+  const [direction, setDirection] = useState(fromEvent ? 'debit' : 'credit');
   const [rupees, setRupees] = useState('');
   const [occurredOn, setOccurredOn] = useState(todayInput());
   const [memberId, setMemberId] = useState('');
@@ -29,7 +32,7 @@ export default function AddTransaction() {
   const [allocations, setAllocations] = useState([]);
   const [chosen, setChosen] = useState({});
   const [reason, setReason] = useState('');
-  const [eventId, setEventId] = useState('');
+  const [eventId, setEventId] = useState(fromEvent);
   const [note, setNote] = useState('');
 
   const [busy, setBusy] = useState(false);
@@ -101,7 +104,7 @@ export default function AddTransaction() {
 
       await api.post('/admin/transactions', body);
       toast(direction === 'credit' ? 'Payment recorded' : 'Expense recorded', 'ok');
-      navigate('/admin');
+      navigate(fromEvent ? `/admin/events/${fromEvent}` : '/admin');
     } catch (err) {
       setError(err.message);
     } finally {

@@ -26,6 +26,7 @@ import MemberDetail from './pages/admin/MemberDetail.jsx';
 import MemberForm from './pages/admin/MemberForm.jsx';
 import Pending from './pages/admin/Pending.jsx';
 import AdminEvents from './pages/admin/AdminEvents.jsx';
+import EventEditor from './pages/admin/EventEditor.jsx';
 import Requests from './pages/admin/Requests.jsx';
 
 import Adjust from './pages/master/Adjust.jsx';
@@ -118,6 +119,7 @@ export default function App() {
       <Route path="/admin/members/:id" element={adminPage(<MemberDetail />)} />
       <Route path="/admin/pending" element={adminPage(<Pending />)} />
       <Route path="/admin/events" element={adminPage(<AdminEvents />)} />
+      <Route path="/admin/events/:id" element={adminPage(<EventEditor />)} />
       <Route path="/admin/requests" element={adminPage(<Requests />)} />
 
       {/* ---- master only --------------------------------------------- */}
