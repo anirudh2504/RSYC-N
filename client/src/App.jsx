@@ -7,6 +7,7 @@ import { Loading } from './components/ui.jsx';
 import Events from './pages/open/Events.jsx';
 import EventDetail from './pages/open/EventDetail.jsx';
 import About from './pages/open/About.jsx';
+import PublicMembers from './pages/open/PublicMembers.jsx';
 import Join from './pages/open/Join.jsx';
 import Unlock from './pages/open/Unlock.jsx';
 import Login from './pages/open/Login.jsx';
@@ -92,6 +93,7 @@ export default function App() {
       <Route path="/" element={publicPage(<Events />)} />
       <Route path="/events/:slug" element={publicPage(<EventDetail />)} />
       <Route path="/about" element={publicPage(<About />)} />
+      <Route path="/members" element={publicPage(<PublicMembers />)} />
       <Route path="/join" element={publicPage(<Join />)} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/login" element={<Login />} />

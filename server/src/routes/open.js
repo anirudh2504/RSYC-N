@@ -65,15 +65,39 @@ router.get('/about', (_req, res) => {
     villageHi: s.villageHi,
     tagline: s.tagline,
     about: s.about,
+    aboutHi: s.aboutHi,
     rules: s.rules,
     founder: {
       name: s.founderName,
       nameHi: s.founderNameHi,
       years: s.founderYears,
+      photoUrl: s.founderPhotoUrl,
       about: s.founderAbout,
+      aboutHi: s.founderAboutHi,
     },
-    // First names only. No phone numbers, no member list, no counts.
-    admins: store.admins().map((a) => ({ name: a.name.split(' ')[0], role: a.role })),
+    // Names only. No phone numbers, no roles, no counts.
+    admins: store.admins().map((a) => ({ name: a.name })),
+  });
+});
+
+/**
+ * The public members board: a face and a name, nothing else.
+ *
+ * No phone numbers, no amounts, no payment status — all of that stays behind
+ * the club PIN on /api/view/members. This endpoint exists so the village can
+ * see who is in the club without being handed everyone's contact details.
+ */
+router.get('/members', (_req, res) => {
+  const s = store.settings();
+  res.json({
+    members: store
+      .members()
+      .filter((m) => m.status === 'active')
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((m) => ({ id: m.id, name: m.name, photoUrl: m.photoUrl || null })),
+    contactPhone: s.contactPhone,
+    groupName: s.groupName,
+    groupNameHi: s.groupNameHi,
   });
 });
 

@@ -773,15 +773,19 @@ router.put('/settings', requireMaster, (req, res) => {
     'villageHi',
     'tagline',
     'about',
+    'aboutHi',
     'bankAccountLabel',
     'upiId',
     'paymentPhone',
     'whatsappGroupUrl',
+    'contactPhone',
     'notice',
     'founderName',
     'founderNameHi',
     'founderYears',
+    'founderPhotoUrl',
     'founderAbout',
+    'founderAboutHi',
   ].forEach((k) => {
     if (req.body[k] !== undefined) patch[k] = String(req.body[k]);
   });

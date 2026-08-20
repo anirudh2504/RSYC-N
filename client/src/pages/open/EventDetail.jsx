@@ -31,17 +31,8 @@ export default function EventDetail() {
     <>
       <BackLink to="/">All events</BackLink>
 
-      <div
-        style={{
-          borderRadius: 'var(--r-lg)',
-          overflow: 'hidden',
-          border: '1px solid var(--line)',
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ aspectRatio: '16 / 10' }}>
-          <EventArt seed={event.slug} palette={event.palette} />
-        </div>
+      <div className="event-hero">
+        <EventArt seed={event.slug} palette={event.palette} />
       </div>
 
       <p className="eyebrow">

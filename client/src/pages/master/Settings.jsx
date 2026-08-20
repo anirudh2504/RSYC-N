@@ -51,13 +51,17 @@ export default function Settings() {
         rules: form.rulesText.split('\n').map((r) => r.trim()).filter(Boolean),
         bankAccountLabel: form.bankAccountLabel,
         upiId: form.upiId,
+        aboutHi: form.aboutHi,
         paymentPhone: form.paymentPhone,
         whatsappGroupUrl: form.whatsappGroupUrl,
+        contactPhone: form.contactPhone,
         notice: form.notice,
         founderName: form.founderName,
         founderNameHi: form.founderNameHi,
         founderYears: form.founderYears,
+        founderPhotoUrl: form.founderPhotoUrl,
         founderAbout: form.founderAbout,
+        founderAboutHi: form.founderAboutHi,
         showPaidBoard: form.showPaidBoard,
         defaultAmountPaise: Math.round((Number(form.defaultAmount) || 0) * 100),
         viewerSessionDays: Number(form.viewerSessionDays) || 30,
@@ -128,11 +132,20 @@ export default function Settings() {
             About page
           </p>
           <div className="stack">
-            <Field label="About the club" id="s-about">
+            <Field label="About the club — हिंदी" id="s-about-hi" hint="Shown by default.">
+              <textarea
+                id="s-about-hi"
+                className="textarea devanagari"
+                style={{ minHeight: 150 }}
+                value={form.aboutHi || ''}
+                onChange={set('aboutHi')}
+              />
+            </Field>
+            <Field label="About the club — English" id="s-about">
               <textarea
                 id="s-about"
                 className="textarea"
-                style={{ minHeight: 160 }}
+                style={{ minHeight: 150 }}
                 value={form.about || ''}
                 onChange={set('about')}
               />
@@ -180,6 +193,20 @@ export default function Settings() {
                 className="input num"
                 value={form.paymentPhone || ''}
                 onChange={set('paymentPhone')}
+                inputMode="numeric"
+                maxLength={10}
+              />
+            </Field>
+            <Field
+              label="Contact number for new members"
+              id="s-contact"
+              hint="Shown on the public members board under 'Become a member'."
+            >
+              <input
+                id="s-contact"
+                className="input num"
+                value={form.contactPhone || ''}
+                onChange={set('contactPhone')}
                 inputMode="numeric"
                 maxLength={10}
               />
@@ -245,10 +272,32 @@ export default function Settings() {
               />
             </Field>
             <Field
-              label="About him"
-              id="s-fabout"
-              hint="Shown on the About page. Replace this with the club's own wording."
+              label="Portrait image"
+              id="s-fphoto"
+              hint="A path under client/public, e.g. /rao-shekha-ji.jpg. If the file is missing the drawn portrait is used instead."
             >
+              <input
+                id="s-fphoto"
+                className="input"
+                value={form.founderPhotoUrl || ''}
+                onChange={set('founderPhotoUrl')}
+                placeholder="/rao-shekha-ji.jpg"
+              />
+            </Field>
+            <Field
+              label="About him — हिंदी"
+              id="s-fabout-hi"
+              hint="Shown by default. Please check this and put it in the club's own words."
+            >
+              <textarea
+                id="s-fabout-hi"
+                className="textarea devanagari"
+                style={{ minHeight: 190 }}
+                value={form.founderAboutHi || ''}
+                onChange={set('founderAboutHi')}
+              />
+            </Field>
+            <Field label="About him — English" id="s-fabout">
               <textarea
                 id="s-fabout"
                 className="textarea"

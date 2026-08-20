@@ -43,7 +43,8 @@ function EventCard({ event }) {
 export default function Events() {
   const { data, loading, error, reload } = useFetch('/open/events');
   const session = useSession();
-  const [tab, setTab] = useState('upcoming');
+  // All first, then past, then upcoming.
+  const [tab, setTab] = useState('all');
 
   const events = data ? data.events : [];
   const now = Date.now();
@@ -54,9 +55,13 @@ export default function Events() {
     return { upcoming: up, past: pa };
   }, [events, now]);
 
-  // Nothing coming up? Open on past events rather than an empty screen.
-  const active = tab === 'upcoming' && upcoming.length === 0 && past.length > 0 ? 'past' : tab;
-  const shown = active === 'upcoming' ? upcoming : past;
+  const TABS = [
+    { key: 'all', label: 'All', list: events },
+    { key: 'past', label: 'Past', list: past },
+    { key: 'upcoming', label: 'Upcoming', list: upcoming },
+  ];
+
+  const shown = (TABS.find((x) => x.key === tab) || TABS[0]).list;
 
   return (
     <>
@@ -78,24 +83,18 @@ export default function Events() {
         </Link>
       ) : null}
 
-      {/* Two options, nothing else. */}
       <div className="segmented" style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          className={active === 'upcoming' ? 'on-credit' : ''}
-          style={active === 'upcoming' ? { background: 'var(--royal)', color: '#fdf6e8' } : undefined}
-          onClick={() => setTab('upcoming')}
-        >
-          Upcoming{upcoming.length ? ` (${upcoming.length})` : ''}
-        </button>
-        <button
-          type="button"
-          className={active === 'past' ? 'on-credit' : ''}
-          style={active === 'past' ? { background: 'var(--royal)', color: '#fdf6e8' } : undefined}
-          onClick={() => setTab('past')}
-        >
-          Past{past.length ? ` (${past.length})` : ''}
-        </button>
+        {TABS.map((x) => (
+          <button
+            key={x.key}
+            type="button"
+            style={tab === x.key ? { background: 'var(--royal)', color: '#fdf6e8' } : undefined}
+            onClick={() => setTab(x.key)}
+          >
+            {x.label}
+            {x.list.length ? ` (${x.list.length})` : ''}
+          </button>
+        ))}
       </div>
 
       {loading ? <Loading rows={3} /> : null}
@@ -103,10 +102,18 @@ export default function Events() {
 
       {!loading && !error ? (
         shown.length === 0 ? (
-          <Empty title={active === 'upcoming' ? 'Nothing coming up' : 'No past events yet'}>
-            {active === 'upcoming'
+          <Empty
+            title={
+              tab === 'upcoming'
+                ? 'Nothing coming up'
+                : tab === 'past'
+                  ? 'No past events yet'
+                  : 'No events yet'
+            }
+          >
+            {tab === 'upcoming'
               ? 'The club will post the next event here.'
-              : 'Events appear here once they have happened.'}
+              : 'Events appear here as the club holds them.'}
           </Empty>
         ) : (
           <div className="event-grid">

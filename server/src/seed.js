@@ -532,6 +532,8 @@ export function buildSeed() {
     village: 'Nangla',
     villageHi: 'नांगला',
     tagline: 'Serving the village since the club was founded',
+    aboutHi:
+      'राव शेखा जी युवा क्लब नांगला गाँव की युवा समिति है। सदस्य हर महीने एक निश्चित राशि साझा कोष में जमा करते हैं, और उसी कोष से गाँव के साझा काम होते हैं — त्योहार, शिविर, मरम्मत, खेलकूद और किसी परिवार पर आई आपात स्थिति में मदद।\n\nजो भी पैसा आता है और जो भी खर्च होता है, सब यहाँ दर्ज रहता है। क्लब का पिन रखने वाला गाँव का कोई भी व्यक्ति पूरा हिसाब देख सकता है।',
     about:
       'Rav Shekha Ji Yuva Club is the youth committee of Nangla. Members contribute a fixed amount every month into one shared fund, and that fund pays for the work the village decides on together — festivals, camps, repairs, sports, and help for families in an emergency.\n\nThe club takes its name from Rao Shekha Ji, the fifteenth-century Rajput ruler whose line gives Shekhawati its name. Every rupee that comes in and every rupee that goes out is recorded here, and any member of the village with the club PIN can see all of it.',
     rules: [
@@ -545,14 +547,20 @@ export function buildSeed() {
     upiId: 'rsycnangla@upi',
     paymentPhone: '9829011001',
     whatsappGroupUrl: '',
+    contactPhone: '9829011001',
 
-    // Shown on the About page. All of it is editable from club settings — the
-    // club should replace this with its own wording.
+    // Shown on the About page, Hindi first. All of it is editable from club
+    // settings — the club should check it and put it in its own words.
     founderName: 'Rao Shekha Ji',
     founderNameHi: 'राव शेखा जी',
     founderYears: '1433 – 1488',
+    founderPhotoUrl: '/rao-shekha-ji.jpg',
+
+    founderAboutHi:
+      'राव शेखा जी का जन्म सन् 1433 में हुआ। वे अमरसर (नान) के राव मोकल के पुत्र थे और कछवाहा राजपूत वंश से थे।\n\nपरंपरा के अनुसार उनके माता-पिता को संतान की प्राप्ति शेख बुरहान की दरगाह पर मनोकामना माँगने के बाद हुई, इसीलिए बालक का नाम "शेखा" रखा गया। यह कथा आज भी इस क्षेत्र में आपसी सौहार्द की पहचान के रूप में कही जाती है।\n\nयुवावस्था में ही गद्दी सँभालने के बाद उन्होंने अपना राज्य विस्तृत किया और आमेर की अधीनता से स्वतंत्र होकर अपनी अलग पहचान बनाई। उन्हीं के नाम से शेखावत वंश चला और यह पूरा क्षेत्र आज "शेखावाटी" कहलाता है।\n\nसन् 1488 में उनका देहांत हुआ।\n\nक्लब उनका नाम इसी भाव से धारण करता है — अपने लोगों के साथ खड़े रहना और उनकी सेवा करना।',
+
     founderAbout:
-      'The club is named after Rao Shekha Ji, the fifteenth-century Kachhwaha Rajput ruler of Amarsar, son of Rao Mokal. He is remembered as the founder of the Shekhawat clan, and the whole region of Shekhawati carries his name to this day.\n\nBy tradition his parents were granted a son after praying at the shrine of the saint Sheikh Burhan, and the boy was named Shekha in his honour — a story the region still tells as a mark of how its two communities have lived alongside each other. He came to the gaddi as a young man, extended his territory across what is now Shekhawati, and asserted his independence from Amber. He died in 1488.\n\nThe club takes his name for the reason the region does: for standing up for its own people and looking after them.',
+      'Rao Shekha Ji was born in 1433, son of Rao Mokal of Amarsar (Nan), of the Kachhwaha Rajput line.\n\nBy tradition his parents were granted a son after praying at the shrine of Sheikh Burhan, and the boy was named Shekha in his honour — a story the region still tells as a mark of how its communities have lived alongside one another.\n\nHe came to the gaddi as a young man, extended his territory across what is now Shekhawati, and asserted his independence from Amber. The Shekhawat clan descends from him, and the whole region carries his name to this day.\n\nHe died in 1488.\n\nThe club takes his name for the same reason the region does: for standing with his own people and looking after them.',
     pinHash: bcrypt.hashSync(config.demoPin, HASH_ROUNDS),
     pinVersion: 3,
     pinUpdatedAt: dateFor(-1, 2),

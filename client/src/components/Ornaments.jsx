@@ -345,6 +345,76 @@ export const Icon = {
   ),
 };
 
+/* ----------------------------------------------------- member medallion --- */
+
+const MEMBER_TONES = [
+  { a: '#1b2a6b', b: '#2c3f92' },
+  { a: '#1f5c4c', b: '#2f7d5c' },
+  { a: '#7a3d12', b: '#a75b1c' },
+  { a: '#8c2b21', b: '#b04030' },
+  { a: '#3d2358', b: '#5b3670' },
+  { a: '#123a5c', b: '#1f6788' },
+];
+
+/**
+ * Stands in for a member photograph until the club uploads real ones. Drawn
+ * from the name, so the same person always gets the same medallion.
+ */
+export function MemberAvatar({ name, className }) {
+  const h = hash(name);
+  const tone = MEMBER_TONES[h % MEMBER_TONES.length];
+  const gid = `ma${h % 100000}`;
+  const letters = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <svg className={className} viewBox="0 0 120 120" role="img" aria-label={name}>
+      <defs>
+        <linearGradient id={`${gid}g`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tone.a} />
+          <stop offset="100%" stopColor={tone.b} />
+        </linearGradient>
+        <pattern id={`${gid}p`} width="15" height="15" patternUnits="userSpaceOnUse">
+          <path d="M7.5 1l6.5 6.5-6.5 6.5L1 7.5z" fill="none" stroke="#e3b45c" strokeWidth="0.5" opacity="0.4" />
+        </pattern>
+      </defs>
+
+      <rect width="120" height="120" fill={`url(#${gid}g)`} />
+      <rect width="120" height="120" fill={`url(#${gid}p)`} />
+
+      {/* the mehrab arch, same motif as the crest */}
+      <path
+        d="M22 118V52c0-18 14-31 38-31s38 13 38 31v66"
+        fill="none"
+        stroke="#e3b45c"
+        strokeWidth="1.4"
+        opacity="0.75"
+      />
+      <circle cx="60" cy="56" r="27" fill="#0e1636" opacity="0.28" />
+      <circle cx="60" cy="56" r="27" fill="none" stroke="#e3b45c" strokeWidth="0.8" opacity="0.6" />
+
+      <text
+        x="60"
+        y="56"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="#f6e3bb"
+        fontSize="24"
+        fontFamily="Rozha One, Georgia, serif"
+      >
+        {letters}
+      </text>
+
+      <rect x="16" y="114" width="88" height="2.6" rx="1.3" fill="#e3b45c" opacity="0.7" />
+    </svg>
+  );
+}
+
 /* --------------------------------------------------- founder portrait ----- */
 
 /**

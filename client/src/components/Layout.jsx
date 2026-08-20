@@ -124,6 +124,7 @@ export function PublicLayout({ children }) {
       ]
     : [
         { to: '/', end: true, icon: <Icon.calendar />, label: 'Events' },
+        { to: '/members', icon: <Icon.people />, label: 'Members' },
         { to: '/about', icon: <Icon.home />, label: 'About the club', short: 'About' },
         { to: '/unlock', icon: <Icon.lock />, label: 'Club fund', short: 'Fund' },
       ];
@@ -133,7 +134,12 @@ export function PublicLayout({ children }) {
     {
       label: 'Club',
       items: [
-        ...(session.viewer ? [{ to: '/about', icon: <Icon.home />, label: 'About the club' }] : []),
+        ...(session.viewer
+          ? [
+              { to: '/members', icon: <Icon.people />, label: 'Members board' },
+              { to: '/about', icon: <Icon.home />, label: 'About the club' },
+            ]
+          : []),
         ...(session.isAdmin
           ? [{ to: '/admin', icon: <Icon.shield />, label: 'Admin area' }]
           : [{ to: '/login', icon: <Icon.shield />, label: 'Admin sign in' }]),
@@ -156,6 +162,16 @@ export function PublicLayout({ children }) {
       <BottomNav items={navItems} />
 
       <Sheet open={menu} title="Menu" onClose={() => setMenu(false)}>
+        <SheetItem
+          icon={<Icon.people />}
+          onClick={() => {
+            setMenu(false);
+            navigate('/members');
+          }}
+        >
+          Members board
+        </SheetItem>
+
         <SheetItem
           icon={<Icon.home />}
           onClick={() => {
