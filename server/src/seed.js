@@ -531,10 +531,10 @@ export function buildSeed() {
     groupName: 'Rav Shekha Ji Yuva Club',
     groupNameHi: 'राव शेखा जी युवा क्लब',
     village: 'Nangla',
-    villageHi: 'नांगला',
+    villageHi: 'नंगला',
     tagline: 'Serving the village since the club was founded',
     aboutHi:
-      'राव शेखा जी युवा क्लब नांगला गाँव की युवा समिति है। सदस्य हर महीने एक निश्चित राशि साझा कोष में जमा करते हैं, और उसी कोष से गाँव के साझा काम होते हैं — त्योहार, शिविर, मरम्मत, खेलकूद और किसी परिवार पर आई आपात स्थिति में मदद।\n\nजो भी पैसा आता है और जो भी खर्च होता है, सब यहाँ दर्ज रहता है। क्लब का पिन रखने वाला गाँव का कोई भी व्यक्ति पूरा हिसाब देख सकता है।',
+      'राव शेखा जी युवा क्लब नंगला गाँव की युवा समिति है। सदस्य हर महीने एक निश्चित राशि साझा कोष में जमा करते हैं, और उसी कोष से गाँव के साझा काम होते हैं — त्योहार, शिविर, मरम्मत, खेलकूद और किसी परिवार पर आई आपात स्थिति में मदद।\n\nजो भी पैसा आता है और जो भी खर्च होता है, सब यहाँ दर्ज रहता है। क्लब का पिन रखने वाला गाँव का कोई भी व्यक्ति पूरा हिसाब देख सकता है।',
     about:
       'Rav Shekha Ji Yuva Club is the youth committee of Nangla. Members contribute a fixed amount every month into one shared fund, and that fund pays for the work the village decides on together — festivals, camps, repairs, sports, and help for families in an emergency.\n\nThe club takes its name from Rao Shekha Ji, the fifteenth-century Rajput ruler whose line gives Shekhawati its name. Every rupee that comes in and every rupee that goes out is recorded here, and any member of the village with the club PIN can see all of it.',
     rules: [

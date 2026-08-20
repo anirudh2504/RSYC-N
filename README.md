@@ -1,6 +1,6 @@
 # RSYC — Rav Shekha Ji Yuva Club, Nangla
 
-राव शेखा जी युवा क्लब, नांगला
+राव शेखा जी युवा क्लब, नंगला
 
 A shared fund ledger and noticeboard for the village club. Members contribute a
 fixed amount every month; anyone holding the club PIN can see the balance and
