@@ -86,7 +86,7 @@ export default function Login() {
 
         <div className="center" style={{ marginTop: 20, display: 'grid', gap: 10 }}>
           <Link to="/" className="small">
-            Back to events
+            Back to the club site
           </Link>
           <Link to="/unlock" className="small muted">
             I only have the club PIN

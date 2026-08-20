@@ -84,7 +84,7 @@ export default function Unlock() {
             members; admins reach their own sign-in from the menu. */}
         <div className="center" style={{ marginTop: 20 }}>
           <Link to="/" className="small">
-            Back to events
+            Back to the club site
           </Link>
         </div>
       </div>

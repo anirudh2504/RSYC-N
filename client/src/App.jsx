@@ -89,12 +89,16 @@ const masterPage = (element) => (
 export default function App() {
   return (
     <Routes>
-      {/* ---- open: no PIN needed ------------------------------------- */}
-      <Route path="/" element={publicPage(<Events />)} />
-      <Route path="/events/:slug" element={publicPage(<EventDetail />)} />
-      <Route path="/about" element={publicPage(<About />)} />
+      {/* ---- open: no PIN needed -------------------------------------
+           About is the front door: someone who lands here for the first
+           time should meet the club before anything else. */}
+      <Route path="/" element={publicPage(<About />)} />
       <Route path="/members" element={publicPage(<PublicMembers />)} />
       <Route path="/join" element={publicPage(<Join />)} />
+      <Route path="/events" element={publicPage(<Events />)} />
+      <Route path="/events/:slug" element={publicPage(<EventDetail />)} />
+      {/* the old address, kept working */}
+      <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/login" element={<Login />} />
 

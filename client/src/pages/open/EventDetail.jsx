@@ -29,7 +29,7 @@ export default function EventDetail() {
 
   return (
     <>
-      <BackLink to="/">All events</BackLink>
+      <BackLink to="/events">All events</BackLink>
 
       <div className="event-hero">
         <EventArt seed={event.slug} palette={event.palette} />

@@ -109,9 +109,9 @@ export function PublicLayout({ children }) {
     navigate('/');
   };
 
+  // About, Members, Join, Events — in that order, everywhere.
   const navItems = session.viewer
     ? [
-        { to: '/', end: true, icon: <Icon.calendar />, label: 'Events' },
         { to: '/fund', end: true, icon: <Icon.home />, label: 'Fund' },
         { to: '/fund/transactions', icon: <Icon.ledger />, label: 'Transactions', short: 'Ledger' },
         { to: '/fund/members', icon: <Icon.people />, label: 'Members' },
@@ -121,12 +121,13 @@ export function PublicLayout({ children }) {
           label: 'Monthly contribution',
           short: 'Monthly',
         },
+        { to: '/events', icon: <Icon.calendar />, label: 'Events' },
       ]
     : [
-        { to: '/', end: true, icon: <Icon.calendar />, label: 'Events' },
+        { to: '/', end: true, icon: <Icon.home />, label: 'About the club', short: 'About' },
         { to: '/members', icon: <Icon.people />, label: 'Members' },
-        { to: '/join', icon: <Icon.inbox />, label: 'Request to join', short: 'Join' },
-        { to: '/about', icon: <Icon.home />, label: 'About the club', short: 'About' },
+        { to: '/join', icon: <Icon.inbox />, label: 'Join the club', short: 'Join' },
+        { to: '/events', icon: <Icon.calendar />, label: 'Events' },
         { to: '/unlock', icon: <Icon.lock />, label: 'Club fund', short: 'Fund' },
       ];
 
@@ -137,9 +138,9 @@ export function PublicLayout({ children }) {
       items: [
         ...(session.viewer
           ? [
+              { to: '/', end: true, icon: <Icon.home />, label: 'About the club' },
               { to: '/members', icon: <Icon.people />, label: 'Members board' },
-              { to: '/join', icon: <Icon.inbox />, label: 'Request to join' },
-              { to: '/about', icon: <Icon.home />, label: 'About the club' },
+              { to: '/join', icon: <Icon.inbox />, label: 'Join the club' },
             ]
           : []),
         ...(session.isAdmin
@@ -164,35 +165,23 @@ export function PublicLayout({ children }) {
       <BottomNav items={navItems} />
 
       <Sheet open={menu} title="Menu" onClose={() => setMenu(false)}>
-        <SheetItem
-          icon={<Icon.people />}
-          onClick={() => {
-            setMenu(false);
-            navigate('/members');
-          }}
-        >
-          Members board
-        </SheetItem>
-
-        <SheetItem
-          icon={<Icon.inbox />}
-          onClick={() => {
-            setMenu(false);
-            navigate('/join');
-          }}
-        >
-          Request to join
-        </SheetItem>
-
-        <SheetItem
-          icon={<Icon.home />}
-          onClick={() => {
-            setMenu(false);
-            navigate('/about');
-          }}
-        >
-          About the club
-        </SheetItem>
+        {[
+          { to: '/', icon: <Icon.home />, label: 'About the club' },
+          { to: '/members', icon: <Icon.people />, label: 'Members board' },
+          { to: '/join', icon: <Icon.inbox />, label: 'Join the club' },
+          { to: '/events', icon: <Icon.calendar />, label: 'Events' },
+        ].map((item) => (
+          <SheetItem
+            key={item.to}
+            icon={item.icon}
+            onClick={() => {
+              setMenu(false);
+              navigate(item.to);
+            }}
+          >
+            {item.label}
+          </SheetItem>
+        ))}
 
         {/* Admin sign in lives here and nowhere else — never on the fund or
             unlock screens, which are for ordinary members. */}

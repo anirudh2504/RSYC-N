@@ -73,7 +73,7 @@ export default function Join() {
         ) : null}
 
         <div className="btn-row" style={{ marginTop: 18 }}>
-          <Link to="/" className="btn btn-ghost btn-slim">
+          <Link to="/events" className="btn btn-ghost btn-slim">
             Events
           </Link>
           <Link to="/members" className="btn btn-soft btn-slim">
