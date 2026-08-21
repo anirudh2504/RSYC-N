@@ -6,7 +6,8 @@
  * right shape, indexes and constraints, and nothing in the services or routes
  * has to change.
  *
- * Money is an integer number of paise everywhere. Rs 200 is 20000.
+ * Money is a WHOLE NUMBER OF RUPEES everywhere. Rs 200 is 200. Paise are not
+ * recorded, and the integer validator below is what keeps it that way.
  */
 
 import mongoose from 'mongoose';
@@ -60,7 +61,7 @@ const memberSchema = new Schema(
 const contributionPlanSchema = new Schema(
   {
     memberId: { type: Schema.Types.ObjectId, ref: 'Member', required: true, index: true },
-    amountPaise: { type: Number, required: true, min: 0 },
+    amount: { type: Number, required: true, min: 0, validate: { validator: Number.isInteger, message: 'Amounts must be whole rupees.' } },
     isEnabled: { type: Boolean, default: true },
     effectiveFrom: { type: String, required: true },
     effectiveTo: { type: String, default: null },
@@ -72,7 +73,7 @@ const contributionPlanSchema = new Schema(
 const allocationSchema = new Schema(
   {
     period: { type: String, required: true },
-    amountPaise: { type: Number, required: true, min: 0 },
+    amount: { type: Number, required: true, min: 0, validate: { validator: Number.isInteger, message: 'Amounts must be whole rupees.' } },
   },
   { _id: false },
 );
@@ -96,7 +97,8 @@ const ledgerEntrySchema = new Schema(
       enum: ['opening', 'contribution', 'donation', 'expense', 'adjustment', 'reversal'],
       required: true,
     },
-    amountPaise: { type: Number, required: true, min: 1 },
+    // Whole rupees. A decimal is a bug, so the schema refuses one outright.
+    amount: { type: Number, required: true, min: 1, validate: { validator: Number.isInteger, message: 'Amounts must be whole rupees.' } },
 
     memberId: { type: Schema.Types.ObjectId, ref: 'Member', default: null },
     payerName: { type: String, default: null },
@@ -163,7 +165,7 @@ const reminderSchema = new Schema(
   {
     memberId: { type: Schema.Types.ObjectId, ref: 'Member', required: true },
     periods: { type: [String], default: [] },
-    amountPaise: { type: Number, required: true },
+    amount: { type: Number, required: true },
     channel: { type: String, default: 'whatsapp' },
     messageText: { type: String, default: '' },
     sentByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin' },
@@ -175,10 +177,10 @@ const reminderSchema = new Schema(
 const reconciliationSchema = new Schema(
   {
     period: { type: String, required: true },
-    passbookBalancePaise: { type: Number, required: true },
-    bookBalancePaise: { type: Number, required: true },
+    passbookBalance: { type: Number, required: true },
+    bookBalance: { type: Number, required: true },
     matched: { type: Boolean, required: true },
-    differencePaise: { type: Number, default: 0 },
+    difference: { type: Number, default: 0 },
     note: { type: String, default: '' },
     verifiedByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin' },
     verifiedAt: { type: Date, default: Date.now },
@@ -239,7 +241,7 @@ const settingsSchema = new Schema(
     viewerSessionDays: { type: Number, default: 30 },
 
     showPaidBoard: { type: Boolean, default: true },
-    defaultAmountPaise: { type: Number, default: 20000 },
+    defaultAmount: { type: Number, default: 200 },
     notice: { type: String, default: '' },
     locale: { type: String, default: 'en' },
   },

@@ -97,7 +97,7 @@ export default function LedgerRow({ entry, footer }) {
 
       <span className={`ledger-amount ${entry.direction === 'credit' ? 'amt-credit' : 'amt-debit'}`}>
         {entry.direction === 'credit' ? '+' : '−'}
-        {money(entry.amountPaise)}
+        {money(entry.amount)}
       </span>
     </div>
   );

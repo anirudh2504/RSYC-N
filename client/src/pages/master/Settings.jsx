@@ -38,7 +38,7 @@ export default function Settings() {
         purposeTextHi: (data.settings.purposePointsHi || []).join('\n'),
         contribText: (data.settings.founderContribution || []).join('\n'),
         contribTextHi: (data.settings.founderContributionHi || []).join('\n'),
-        defaultAmount: String((data.settings.defaultAmountPaise || 0) / 100),
+        defaultAmount: String(data.settings.defaultAmount || 0),
       });
     }
   }, [data]);
@@ -80,7 +80,7 @@ export default function Settings() {
         founderContribution: lines(form.contribText),
         founderContributionHi: lines(form.contribTextHi),
         showPaidBoard: form.showPaidBoard,
-        defaultAmountPaise: Math.round((Number(form.defaultAmount) || 0) * 100),
+        defaultAmount: Math.round(Number(form.defaultAmount) || 0),
         viewerSessionDays: Number(form.viewerSessionDays) || 30,
       });
       toast('Settings saved', 'ok');
@@ -229,14 +229,14 @@ export default function Settings() {
             <Field
               label="Default monthly amount"
               id="s-default"
-              hint={`Currently ${money(form.defaultAmountPaise)}. Used when adding a new member.`}
+              hint={`Currently ${money(form.defaultAmount)}. Used when adding a new member.`}
             >
               <input
                 id="s-default"
                 className="input num"
                 value={form.defaultAmount}
                 onChange={set('defaultAmount')}
-                inputMode="decimal"
+                inputMode="numeric"
               />
             </Field>
             <Field label="UPI ID" id="s-upi" hint="Shown on the fund page for members to pay into.">

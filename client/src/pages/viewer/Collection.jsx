@@ -12,10 +12,10 @@ import {
 import { initials, money, periodLabel, periodLabelLong, currentPeriod } from '../../lib/format.js';
 
 function statusChip(row) {
-  if (row.duePaise === 0) return <span className="chip chip-exempt">Not contributing</span>;
+  if (row.due === 0) return <span className="chip chip-exempt">Not contributing</span>;
   if (row.status === 'paid') return <span className="chip chip-paid">Paid</span>;
   if (row.status === 'partial') {
-    return <span className="chip chip-partial">{money(row.paidPaise)} of {money(row.duePaise)}</span>;
+    return <span className="chip chip-partial">{money(row.paid)} of {money(row.due)}</span>;
   }
   return <span className="chip chip-unpaid">Not yet</span>;
 }
@@ -56,14 +56,14 @@ export default function Collection() {
                 {data.paidCount} of {data.payableCount} paid
               </p>
               <p className="num" style={{ fontWeight: 700 }}>
-                {money(data.collectedPaise)}
+                {money(data.collected)}
                 <span className="small muted" style={{ fontWeight: 400 }}>
                   {' '}
-                  / {money(data.expectedPaise)}
+                  / {money(data.expected)}
                 </span>
               </p>
             </div>
-            <Progress value={data.collectedPaise} max={data.expectedPaise} />
+            <Progress value={data.collected} max={data.expected} />
           </Card>
 
           {data.rows.length === 0 ? (
@@ -88,7 +88,7 @@ export default function Collection() {
                   <div className="list-body">
                     <p className="list-name">{row.name}</p>
                     <p className="list-meta">
-                      {row.duePaise > 0 ? `${money(row.duePaise)} due` : 'Not on the collection list'}
+                      {row.due > 0 ? `${money(row.due)} due` : 'Not on the collection list'}
                       {row.pendingCount > 1 ? ` · ${row.pendingCount} months behind` : ''}
                     </p>
                   </div>

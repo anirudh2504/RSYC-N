@@ -85,7 +85,7 @@ export default function EventDetail() {
         </>
       ) : null}
 
-      {session.viewer && data.spendPaise > 0 ? (
+      {session.viewer && data.spend > 0 ? (
         <>
           <div style={{ margin: '24px 0 12px' }}>
             <Rule label="From the club fund" />
@@ -95,7 +95,7 @@ export default function EventDetail() {
               title="Total spent"
               action={
                 <span className="num" style={{ fontWeight: 700, color: 'var(--debit)' }}>
-                  {money(data.spendPaise)}
+                  {money(data.spend)}
                 </span>
               }
             />

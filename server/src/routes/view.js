@@ -7,12 +7,12 @@ import express from 'express';
 import { store } from '../store.js';
 import { requireViewer } from '../middleware/auth.js';
 import {
-  balancePaise,
+  balance,
   sortedEntries,
   liveEntries,
   decorate,
   monthTotals,
-  eventSpendPaise,
+  eventSpend,
   eventExpenses,
 } from '../services/ledger.js';
 import { collectionBoard, currentPeriod, duesForEveryone } from '../services/dues.js';
@@ -29,11 +29,11 @@ router.get('/summary', (_req, res) => {
   const recent = sortedEntries(store.entries()).slice(0, 5).map(decorate);
 
   res.json({
-    balancePaise: balancePaise(),
+    balance: balance(),
     period,
     collection: {
-      expectedPaise: board.expectedPaise,
-      collectedPaise: board.collectedPaise,
+      expected: board.expected,
+      collected: board.collected,
       paidCount: board.paidCount,
       payableCount: board.payableCount,
     },
@@ -78,7 +78,7 @@ router.get('/transactions', (req, res) => {
     offset,
     limit,
     hasMore: offset + limit < total,
-    balancePaise: balancePaise(),
+    balance: balance(),
     month: month ? monthTotals(String(month)) : null,
   });
 });
@@ -125,7 +125,7 @@ router.get('/events/:slug', (req, res) => {
   }
   return res.json({
     event,
-    spendPaise: eventSpendPaise(event.id),
+    spend: eventSpend(event.id),
     expenses: eventExpenses(event.id),
   });
 });

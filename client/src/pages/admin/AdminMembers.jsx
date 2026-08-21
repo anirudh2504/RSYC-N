@@ -81,7 +81,7 @@ export default function AdminMembers() {
                 {m.fatherName ? <p className="list-meta">S/o {m.fatherName}</p> : null}
                 <p className="list-meta">
                   {m.phone} ·{' '}
-                  {m.isEnabled ? `${money(m.monthlyAmountPaise)}/month` : 'Not contributing'} · since{' '}
+                  {m.isEnabled ? `${money(m.monthlyAmount)}/month` : 'Not contributing'} · since{' '}
                   {periodLabel(m.joinedPeriod)}
                 </p>
               </div>
@@ -91,7 +91,7 @@ export default function AdminMembers() {
                   <>
                     <span className="chip chip-unpaid">{m.pendingCount}m</span>
                     <p className="tiny muted num" style={{ marginTop: 4 }}>
-                      {money(m.pendingPaise)}
+                      {money(m.pending)}
                     </p>
                   </>
                 ) : m.isEnabled ? (

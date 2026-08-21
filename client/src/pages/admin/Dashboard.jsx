@@ -26,18 +26,18 @@ export default function Dashboard() {
         <Jali className="balance-jali" />
         <div className="balance-body">
           <p className="balance-label">Club fund balance</p>
-          <p className="balance-figure num">{money(data.balancePaise)}</p>
+          <p className="balance-figure num">{money(data.balance)}</p>
           <p className="balance-note">
             {data.memberCount} members &middot; {periodLabelLong(data.period)}
           </p>
           <dl className="balance-split">
             <div>
               <dt>In this month</dt>
-              <dd className="num in-figure">{money(data.month.creditPaise)}</dd>
+              <dd className="num in-figure">{money(data.month.credit)}</dd>
             </div>
             <div>
               <dt>Out this month</dt>
-              <dd className="num out-figure">{money(data.month.debitPaise)}</dd>
+              <dd className="num out-figure">{money(data.month.debit)}</dd>
             </div>
           </dl>
         </div>
@@ -66,7 +66,7 @@ export default function Dashboard() {
                 <p style={{ fontWeight: 700 }}>
                   {data.pendingCount} {data.pendingCount === 1 ? 'member' : 'members'} pending
                 </p>
-                <p className="small muted">{money(data.pendingPaise)} outstanding in total</p>
+                <p className="small muted">{money(data.pending)} outstanding in total</p>
               </div>
               <span className="chevron">
                 <Icon.chevron />
@@ -103,10 +103,10 @@ export default function Dashboard() {
               </p>
             </div>
             <p className="num" style={{ fontWeight: 700 }}>
-              {money(collection.collectedPaise)}
+              {money(collection.collected)}
             </p>
           </div>
-          <Progress value={collection.collectedPaise} max={collection.expectedPaise} />
+          <Progress value={collection.collected} max={collection.expected} />
         </Card>
       </div>
 

@@ -21,7 +21,7 @@ import {
   useToast,
 } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
-import { money, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
+import { money, onlyDigits, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
 import { uploadImage } from '../../lib/upload.js';
 
 export default function MemberDetail() {
@@ -46,7 +46,7 @@ export default function MemberDetail() {
   const m = data.member;
 
   const openPlan = () => {
-    setAmount(String(m.monthlyAmountPaise / 100));
+    setAmount(String(m.monthlyAmount));
     setEnabled(m.isEnabled);
     setFormError('');
     setPlanOpen(true);
@@ -58,7 +58,7 @@ export default function MemberDetail() {
     try {
       await api.put(`/admin/members/${id}/plan`, {
         isEnabled: enabled,
-        amountPaise: Math.round((Number(amount) || 0) * 100),
+        amount: Math.round(Number(amount) || 0),
       });
       toast('Contribution updated', 'ok');
       setPlanOpen(false);
@@ -169,17 +169,17 @@ export default function MemberDetail() {
       </div>
 
       <div className="stat-grid" style={{ marginBottom: 16 }}>
-        <Stat label="Paid in total" value={money(m.totalPaidPaise)} />
-        <Stat label="Monthly" value={m.isEnabled ? money(m.monthlyAmountPaise) : '—'} />
+        <Stat label="Paid in total" value={money(m.totalPaid)} />
+        <Stat label="Monthly" value={m.isEnabled ? money(m.monthlyAmount) : '—'} />
         <Stat label="Months pending" value={m.pendingCount} />
-        <Stat label="Outstanding" value={money(m.pendingPaise)} />
+        <Stat label="Outstanding" value={money(m.pending)} />
       </div>
 
       {m.pendingCount > 0 ? (
         <Card className="card-pad" style={{ marginBottom: 16 }}>
           <p style={{ fontWeight: 700, marginBottom: 4 }}>
             {m.pendingCount} {m.pendingCount === 1 ? 'month' : 'months'} pending —{' '}
-            {money(m.pendingPaise)}
+            {money(m.pending)}
           </p>
           <p className="small muted">
             {m.pendingPeriods.map((p) => periodLabel(p)).join(', ')}
@@ -194,8 +194,8 @@ export default function MemberDetail() {
             Send a reminder
           </Button>
         </Card>
-      ) : m.advancePaise > 0 ? (
-        <Notice kind="ok">Paid {money(m.advancePaise)} in advance. Nothing due.</Notice>
+      ) : m.advance > 0 ? (
+        <Notice kind="ok">Paid {money(m.advance)} in advance. Nothing due.</Notice>
       ) : (
         <Notice kind="ok">Up to date. Nothing pending.</Notice>
       )}
@@ -209,7 +209,7 @@ export default function MemberDetail() {
           <div key={month.period} className={`month-cell cell-${month.status}`}>
             <p className="m">{periodShort(month.period)}</p>
             <p className="v">
-              {month.status === 'exempt' ? '—' : `₹${Math.round(month.paidPaise / 100)}`}
+              {month.status === 'exempt' ? '—' : `₹${month.paid}`}
             </p>
           </div>
         ))}
@@ -223,7 +223,7 @@ export default function MemberDetail() {
         <div className="row-between">
           <div>
             <p style={{ fontWeight: 700 }}>
-              {m.isEnabled ? `${money(m.monthlyAmountPaise)} every month` : 'Not on the collection list'}
+              {m.isEnabled ? `${money(m.monthlyAmount)} every month` : 'Not on the collection list'}
             </p>
             <p className="small muted">
               {m.isEnabled
@@ -246,7 +246,7 @@ export default function MemberDetail() {
                 {periodLabel(p.effectiveFrom)}
                 {p.effectiveTo ? ` – ${periodLabel(p.effectiveTo)}` : ' – now'}
               </dt>
-              <dd>{p.isEnabled ? money(p.amountPaise) : 'Off'}</dd>
+              <dd>{p.isEnabled ? money(p.amount) : 'Off'}</dd>
             </div>
           ))}
         </Card>
@@ -297,8 +297,8 @@ export default function MemberDetail() {
                 id="plan-amount"
                 className="input num"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                inputMode="decimal"
+                onChange={(e) => setAmount(onlyDigits(e.target.value))}
+                inputMode="numeric"
               />
             </Field>
           ) : (
@@ -355,7 +355,7 @@ export default function MemberDetail() {
           and nothing further will be due from them.
         </p>
         <div className="notice-box notice-info" style={{ marginTop: 12 }}>
-          The <strong>{money(m.totalPaidPaise)}</strong> they have paid stays in the ledger and the
+          The <strong>{money(m.totalPaid)}</strong> they have paid stays in the ledger and the
           club balance does not change. Nothing is deleted from the accounts.
         </div>
         <p className="hint" style={{ marginTop: 10 }}>

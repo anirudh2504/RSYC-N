@@ -13,7 +13,7 @@ export default function Transactions() {
   const [month, setMonth] = useState('');
   const [type, setType] = useState('');
   const [entries, setEntries] = useState([]);
-  const [meta, setMeta] = useState({ total: 0, hasMore: false, month: null, balancePaise: 0 });
+  const [meta, setMeta] = useState({ total: 0, hasMore: false, month: null, balance: 0 });
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
@@ -76,7 +76,7 @@ export default function Transactions() {
   // backdated entry shifts every row that follows it.
   const showRunning = month === currentPeriod();
 
-  let running = meta.balancePaise;
+  let running = meta.balance;
 
   return (
     <>
@@ -136,19 +136,19 @@ export default function Transactions() {
             <div>
               <p className="stat-k">In</p>
               <p className="num" style={{ fontWeight: 700, color: 'var(--credit)' }}>
-                {money(meta.month.creditPaise)}
+                {money(meta.month.credit)}
               </p>
             </div>
             <div>
               <p className="stat-k">Out</p>
               <p className="num" style={{ fontWeight: 700, color: 'var(--debit)' }}>
-                {money(meta.month.debitPaise)}
+                {money(meta.month.debit)}
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <p className="stat-k">Net</p>
               <p className="num" style={{ fontWeight: 700 }}>
-                {money(meta.month.netPaise, true)}
+                {money(meta.month.net, true)}
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function Transactions() {
             <CardHead
               title={`${meta.total} ${meta.total === 1 ? 'entry' : 'entries'}`}
               action={
-                <span className="small muted num">Balance {money(meta.balancePaise)}</span>
+                <span className="small muted num">Balance {money(meta.balance)}</span>
               }
             />
             {entries.map((entry) => {
@@ -177,7 +177,7 @@ export default function Transactions() {
                 // Every entry counts here, reversed ones included — a reversed
                 // entry and its reversal cancel each other out in the running
                 // total exactly as they do in the balance.
-                running -= entry.direction === 'credit' ? entry.amountPaise : -entry.amountPaise;
+                running -= entry.direction === 'credit' ? entry.amount : -entry.amount;
               }
               return <LedgerRow key={entry.id} entry={entry} footer={rowFooter} />;
             })}

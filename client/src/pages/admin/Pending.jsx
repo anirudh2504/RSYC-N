@@ -36,7 +36,7 @@ export default function Pending() {
   const openReminder = (member) => {
     setTarget(member);
     setMessage(
-      `Namaste ${member.name} ji.\n${data.groupName} — ₹${member.pendingPaise / 100} pending (${member.pendingPeriods
+      `Namaste ${member.name} ji.\n${data.groupName} — ₹${member.pending} pending (${member.pendingPeriods
         .map((p) => periodLabel(p))
         .join(', ')}).\nUPI: ${data.upiId}\nDhanyavaad.`,
     );
@@ -60,14 +60,14 @@ export default function Pending() {
     }
   };
 
-  const totalPaise = data.members.reduce((s, m) => s + m.pendingPaise, 0);
+  const total = data.members.reduce((s, m) => s + m.pending, 0);
 
   return (
     <>
       <PageHead
         eyebrow="Collection"
         title="Pending members"
-        sub={`${data.members.length} behind · ${money(totalPaise)} outstanding`}
+        sub={`${data.members.length} behind · ${money(total)} outstanding`}
       />
 
       {data.members.length === 0 ? (
@@ -87,7 +87,7 @@ export default function Pending() {
                 </Link>
                 <p className="list-meta">
                   {m.pendingCount} {m.pendingCount === 1 ? 'month' : 'months'} ·{' '}
-                  {money(m.pendingPaise)}
+                  {money(m.pending)}
                 </p>
                 <p className="tiny muted">
                   {m.lastRemindedAt ? `Reminded ${relativeDays(m.lastRemindedAt)}` : 'Never reminded'}
@@ -109,7 +109,7 @@ export default function Pending() {
         <div className="sheet-pad stack">
           {target ? (
             <Notice kind="info">
-              {target.name} · {target.phone} · {money(target.pendingPaise)} pending
+              {target.name} · {target.phone} · {money(target.pending)} pending
             </Notice>
           ) : null}
 

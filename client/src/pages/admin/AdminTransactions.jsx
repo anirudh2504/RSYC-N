@@ -19,7 +19,7 @@ import { money } from '../../lib/format.js';
 export default function AdminTransactions() {
   const toast = useToast();
   const [q, setQ] = useState('');
-  const [state, setState] = useState({ loading: true, entries: [], total: 0, hasMore: false, balancePaise: 0 });
+  const [state, setState] = useState({ loading: true, entries: [], total: 0, hasMore: false, balance: 0 });
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState(null);
   const [reversing, setReversing] = useState(null);
@@ -104,7 +104,7 @@ export default function AdminTransactions() {
           <Card>
             <CardHead
               title={`${state.total} entries`}
-              action={<span className="small muted num">Balance {money(state.balancePaise)}</span>}
+              action={<span className="small muted num">Balance {money(state.balance)}</span>}
             />
             {state.entries.map((entry) => (
               <LedgerRow

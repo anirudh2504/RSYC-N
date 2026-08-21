@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { requireAdmin, requireMaster } from '../middleware/auth.js';
 import { nowIso, slugify } from '../utils.js';
 import {
-  balancePaise,
+  balance,
   sortedEntries,
   decorate,
   postEntry,
@@ -15,7 +15,7 @@ import {
   postAdjustment,
   isLocked,
   monthTotals,
-  eventSpendPaise,
+  eventSpend,
   eventExpenses,
 } from '../services/ledger.js';
 import {
@@ -78,6 +78,21 @@ const audit = (req, action, entityType, summary, entityId = null) =>
 const bad = (res, message) => res.status(400).json({ error: 'invalid', message });
 
 /**
+ * Money is whole rupees, always.
+ *
+ * A decimal is refused rather than rounded. Rounding would silently turn Rs
+ * 200.5 into Rs 201 and nobody would know which one the club actually
+ * received — the point of an append-only ledger is that the number on the
+ * screen is the number that happened.
+ */
+function readAmount(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { error: 'Enter an amount in rupees.' };
+  if (!Number.isInteger(n)) return { error: 'Enter whole rupees only, with no paise.' };
+  return n;
+}
+
+/**
  * Photos arrive as a compressed data URI, already scaled by the browser before
  * it sent them. Anything well over the cap means that compression did not run,
  * so it is refused rather than stored.
@@ -138,17 +153,17 @@ router.get('/dashboard', (req, res) => {
   const pending = pendingMembers();
 
   res.json({
-    balancePaise: balancePaise(),
+    balance: balance(),
     period,
     month: monthTotals(period),
     collection: {
-      expectedPaise: board.expectedPaise,
-      collectedPaise: board.collectedPaise,
+      expected: board.expected,
+      collected: board.collected,
       paidCount: board.paidCount,
       payableCount: board.payableCount,
     },
     pendingCount: pending.length,
-    pendingPaise: pending.reduce((s, p) => s + p.pendingPaise, 0),
+    pending: pending.reduce((s, p) => s + p.pending, 0),
     joinRequestCount: store.joinRequests().filter((r) => r.status === 'pending').length,
     memberCount: store.activeMembers().length,
     recent: sortedEntries(store.entries()).slice(0, 5).map(decorate),
@@ -166,7 +181,7 @@ router.get('/transactions', (req, res) => {
   if (q) {
     list = list.filter((e) => {
       const member = e.memberId ? store.findMember(e.memberId) : null;
-      return [e.reason, e.note, e.payerName, member ? member.name : '', String(e.amountPaise / 100)]
+      return [e.reason, e.note, e.payerName, member ? member.name : '', String(e.amount)]
         .filter(Boolean)
         .some((t) => String(t).toLowerCase().includes(q));
     });
@@ -187,23 +202,22 @@ router.get('/transactions', (req, res) => {
     offset,
     limit,
     hasMore: offset + limit < list.length,
-    balancePaise: balancePaise(),
+    balance: balance(),
   });
 });
 
 router.get('/transactions/suggest', (req, res) => {
   const memberId = String(req.query.memberId || '');
-  const amountPaise = Number(req.query.amountPaise) || 0;
+  const amount = Number(req.query.amount) || 0;
   if (!store.findMember(memberId)) return res.json({ allocations: [] });
-  return res.json({ allocations: suggestAllocations(memberId, amountPaise) });
+  return res.json({ allocations: suggestAllocations(memberId, amount) });
 });
 
 router.post('/transactions', (req, res) => {
   const direction = req.body.direction === 'debit' ? 'debit' : 'credit';
-  const amountPaise = Math.round(Number(req.body.amountPaise) || 0);
-  if (!Number.isFinite(amountPaise) || amountPaise <= 0) {
-    return bad(res, 'Enter an amount greater than zero.');
-  }
+  const amount = readAmount(req.body.amount);
+  if (amount && amount.error) return bad(res, amount.error);
+  if (!amount || amount <= 0) return bad(res, 'Enter an amount greater than zero.');
 
   // The date may be set on the way in and never again. Not in the future, and
   // never before the opening balance.
@@ -224,7 +238,7 @@ router.post('/transactions', (req, res) => {
     const entry = postEntry({
       direction: 'debit',
       kind: 'expense',
-      amountPaise,
+      amount,
       reason,
       takenBy: String(req.body.takenBy || '').trim() || null,
       note: String(req.body.note || '').trim(),
@@ -232,8 +246,8 @@ router.post('/transactions', (req, res) => {
       occurredOn: occurredOn.toISOString(),
       adminId: req.admin.id,
     });
-    audit(req, 'ledger.money-out', 'LedgerEntry', `Rs ${amountPaise / 100} out — ${reason}`, entry.id);
-    return res.json({ entry: decorate(entry), balancePaise: balancePaise() });
+    audit(req, 'ledger.money-out', 'LedgerEntry', `Rs ${amount} out — ${reason}`, entry.id);
+    return res.json({ entry: decorate(entry), balance: balance() });
   }
 
   // credit
@@ -247,12 +261,12 @@ router.post('/transactions', (req, res) => {
 
   let allocations = Array.isArray(req.body.allocations) ? req.body.allocations : [];
   allocations = allocations
-    .filter((a) => a && a.period && Number(a.amountPaise) > 0)
-    .map((a) => ({ period: String(a.period), amountPaise: Math.round(Number(a.amountPaise)) }));
+    .filter((a) => a && a.period && Number(a.amount) > 0)
+    .map((a) => ({ period: String(a.period), amount: Math.round(Number(a.amount)) }));
 
   if (memberId && allocations.length) {
-    const allocated = allocations.reduce((s, a) => s + a.amountPaise, 0);
-    if (allocated > amountPaise) {
+    const allocated = allocations.reduce((s, a) => s + a.amount, 0);
+    if (allocated > amount) {
       return bad(res, 'The months selected add up to more than the amount received.');
     }
   }
@@ -260,7 +274,7 @@ router.post('/transactions', (req, res) => {
   const entry = postEntry({
     direction: 'credit',
     kind: memberId ? 'contribution' : 'donation',
-    amountPaise,
+    amount,
     memberId,
     payerName: memberId ? null : payerName,
     allocations: memberId ? allocations : [],
@@ -270,8 +284,8 @@ router.post('/transactions', (req, res) => {
   });
 
   const who = memberId ? store.findMember(memberId).name : payerName;
-  audit(req, 'ledger.money-in', 'LedgerEntry', `Rs ${amountPaise / 100} in from ${who}`, entry.id);
-  return res.json({ entry: decorate(entry), balancePaise: balancePaise() });
+  audit(req, 'ledger.money-in', 'LedgerEntry', `Rs ${amount} in from ${who}`, entry.id);
+  return res.json({ entry: decorate(entry), balance: balance() });
 });
 
 router.patch('/transactions/:id', (req, res) => {
@@ -288,10 +302,11 @@ router.patch('/transactions/:id', (req, res) => {
   }
 
   const patch = {};
-  if (req.body.amountPaise !== undefined) {
-    const amount = Math.round(Number(req.body.amountPaise));
-    if (!Number.isFinite(amount) || amount <= 0) return bad(res, 'Enter a valid amount.');
-    patch.amountPaise = amount;
+  if (req.body.amount !== undefined) {
+    const amount = readAmount(req.body.amount);
+    if (amount && amount.error) return bad(res, amount.error);
+    if (!amount || amount <= 0) return bad(res, 'Enter a valid amount.');
+    patch.amount = amount;
   }
   if (req.body.reason !== undefined) patch.reason = String(req.body.reason).trim();
   if (req.body.note !== undefined) patch.note = String(req.body.note).trim();
@@ -305,7 +320,7 @@ router.patch('/transactions/:id', (req, res) => {
 
   store.updateEntry(entry.id, patch);
   audit(req, 'ledger.edit', 'LedgerEntry', 'Edited an entry inside the edit window', entry.id);
-  return res.json({ entry: decorate(store.findEntry(entry.id)), balancePaise: balancePaise() });
+  return res.json({ entry: decorate(store.findEntry(entry.id)), balance: balance() });
 });
 
 /**
@@ -336,8 +351,8 @@ router.post('/transactions/:id/event', (req, res) => {
     'ledger.relink',
     'LedgerEntry',
     event
-      ? `Linked an expense of Rs ${entry.amountPaise / 100} to ${event.title}`
-      : `Unlinked an expense of Rs ${entry.amountPaise / 100} from ${previous ? previous.title : 'an event'}`,
+      ? `Linked an expense of Rs ${entry.amount} to ${event.title}`
+      : `Unlinked an expense of Rs ${entry.amount} from ${previous ? previous.title : 'an event'}`,
     entry.id,
   );
 
@@ -360,7 +375,7 @@ router.post('/transactions/:id/reverse', (req, res) => {
   if (result.error) return bad(res, result.error);
 
   audit(req, 'ledger.reverse', 'LedgerEntry', `Reversed an entry: ${reason}`, req.params.id);
-  return res.json({ ok: true, balancePaise: balancePaise() });
+  return res.json({ ok: true, balance: balance() });
 });
 
 // ------------------------------------------------------------------ collect
@@ -378,20 +393,20 @@ router.post('/collect', (req, res) => {
   const names = [];
   for (const p of payments) {
     const member = store.findMember(p.memberId);
-    const amountPaise = Math.round(Number(p.amountPaise) || 0);
-    if (!member || amountPaise <= 0) continue;
+    const amount = readAmount(p.amount);
+    if (!member || typeof amount !== 'number' || amount <= 0) continue;
 
     const entry = postEntry({
       direction: 'credit',
       kind: 'contribution',
-      amountPaise,
+      amount,
       memberId: member.id,
-      allocations: [{ period, amountPaise }],
+      allocations: [{ period, amount }],
       occurredOn: new Date().toISOString(),
       adminId: req.admin.id,
     });
     created.push(decorate(entry));
-    names.push(`${member.name} Rs ${amountPaise / 100}`);
+    names.push(`${member.name} Rs ${amount}`);
   }
 
   audit(
@@ -407,7 +422,7 @@ router.post('/collect', (req, res) => {
     ok: true,
     count: created.length,
     entries: created,
-    balancePaise: balancePaise(),
+    balance: balance(),
     board: collectionBoard(period),
   });
 });
@@ -422,13 +437,13 @@ router.get('/members', (_req, res) => {
       fatherName: d.fatherName,
       phone: d.phone,
       joinedPeriod: d.joinedPeriod,
-      monthlyAmountPaise: d.monthlyAmountPaise,
+      monthlyAmount: d.monthlyAmount,
       isEnabled: d.isEnabled,
       pendingCount: d.pendingCount,
-      pendingPaise: d.pendingPaise,
-      totalPaidPaise: d.totalPaidPaise,
+      pending: d.pending,
+      totalPaid: d.totalPaid,
     })),
-    defaultAmountPaise: store.settings().defaultAmountPaise,
+    defaultAmount: store.settings().defaultAmount,
   });
 });
 
@@ -454,12 +469,13 @@ router.post('/members', (req, res) => {
   const fatherName = String(req.body.fatherName || '').trim();
   const phone = String(req.body.phone || '').trim();
   const isEnabled = req.body.isEnabled !== false;
-  const amountPaise = Math.round(Number(req.body.amountPaise) || 0);
+  const amount = readAmount(req.body.amount);
+  if (amount && amount.error) return bad(res, amount.error);
 
   if (name.length < 2) return bad(res, 'Enter the member name.');
   if (fatherName.length < 2) return bad(res, "Enter the father's name.");
   if (!/^[0-9]{10}$/.test(phone)) return bad(res, 'Enter a 10 digit mobile number.');
-  if (isEnabled && amountPaise <= 0) return bad(res, 'Enter the monthly amount.');
+  if (isEnabled && amount <= 0) return bad(res, 'Enter the monthly amount.');
 
   const photo = readPhoto(req.body.photoUrl);
   if (photo && photo.error) return bad(res, photo.error);
@@ -478,7 +494,7 @@ router.post('/members', (req, res) => {
 
   store.addPlan({
     memberId: member.id,
-    amountPaise: isEnabled ? amountPaise : 0,
+    amount: isEnabled ? amount : 0,
     isEnabled,
     effectiveFrom: joinedPeriod,
     createdByAdminId: req.admin.id,
@@ -531,12 +547,13 @@ router.put('/members/:id/plan', (req, res) => {
   if (!member) return res.status(404).json({ error: 'not_found', message: 'Member not found.' });
 
   const isEnabled = req.body.isEnabled !== false;
-  const amountPaise = Math.round(Number(req.body.amountPaise) || 0);
-  if (isEnabled && amountPaise <= 0) return bad(res, 'Enter the monthly amount.');
+  const amount = readAmount(req.body.amount);
+  if (amount && amount.error) return bad(res, amount.error);
+  if (isEnabled && (!amount || amount <= 0)) return bad(res, 'Enter the monthly amount.');
 
   const from = currentPeriod();
   const existing = currentPlan(member.id);
-  if (existing && existing.amountPaise === (isEnabled ? amountPaise : 0) && existing.isEnabled === isEnabled) {
+  if (existing && existing.amount === (isEnabled ? amount : 0) && existing.isEnabled === isEnabled) {
     return res.json({ member: duesForMember(member.id), unchanged: true });
   }
 
@@ -546,7 +563,7 @@ router.put('/members/:id/plan', (req, res) => {
 
   store.addPlan({
     memberId: member.id,
-    amountPaise: isEnabled ? amountPaise : 0,
+    amount: isEnabled ? amount : 0,
     isEnabled,
     effectiveFrom: from,
     createdByAdminId: req.admin.id,
@@ -557,7 +574,7 @@ router.put('/members/:id/plan', (req, res) => {
     'member.plan',
     'ContributionPlan',
     isEnabled
-      ? `Set ${member.name} to Rs ${amountPaise / 100} a month from ${from}`
+      ? `Set ${member.name} to Rs ${amount} a month from ${from}`
       : `Took ${member.name} off the collection list from ${from}`,
     member.id,
   );
@@ -617,15 +634,15 @@ router.post('/reminders', (req, res) => {
   const s = store.settings();
 
   const months = dues.pendingPeriods;
-  const rupeesDue = dues.pendingPaise / 100;
+  const amountDue = dues.pending;
   const text =
     String(req.body.messageText || '').trim() ||
-    `Namaste ${member.name} ji.\n${s.groupName}, ${s.village} - Rs ${rupeesDue} pending (${months.length} month${months.length === 1 ? '' : 's'}).\nUPI: ${s.upiId}\nDhanyavaad.`;
+    `Namaste ${member.name} ji.\n${s.groupName}, ${s.village} - Rs ${amountDue} pending (${months.length} month${months.length === 1 ? '' : 's'}).\nUPI: ${s.upiId}\nDhanyavaad.`;
 
   store.addReminder({
     memberId: member.id,
     periods: months,
-    amountPaise: dues.pendingPaise,
+    amount: dues.pending,
     messageText: text,
     sentByAdminId: req.admin.id,
   });
@@ -662,7 +679,7 @@ router.get('/events', (_req, res) => {
 router.get('/events/:id', (req, res) => {
   const event = store.findEvent(req.params.id);
   if (!event) return res.status(404).json({ error: 'not_found', message: 'Event not found.' });
-  return res.json({ event, spendPaise: eventSpendPaise(event.id), expenses: eventExpenses(event.id) });
+  return res.json({ event, spend: eventSpend(event.id), expenses: eventExpenses(event.id) });
 });
 
 router.post('/events', (req, res) => {
@@ -848,29 +865,30 @@ router.post('/join-requests/:id/reject', (req, res) => {
 // =========================================================== master only ===
 
 router.post('/adjustments', requireMaster, (req, res) => {
-  const targetPaise = Math.round(Number(req.body.targetPaise));
+  const target = readAmount(req.body.target);
   const reason = String(req.body.reason || '').trim();
 
-  if (!Number.isFinite(targetPaise) || targetPaise < 0) return bad(res, 'Enter the true balance.');
+  if (target && target.error) return bad(res, target.error);
+  if (typeof target !== 'number' || target < 0) return bad(res, 'Enter the true balance.');
   if (reason.length < 10) return bad(res, 'Write a reason of at least 10 characters.');
 
-  const result = postAdjustment(targetPaise, reason, req.admin.id);
+  const result = postAdjustment(target, reason, req.admin.id);
   if (result.error) return bad(res, result.error);
 
   audit(
     req,
     'ledger.adjust',
     'LedgerEntry',
-    `Balance corrected by Rs ${result.deltaPaise / 100}: ${reason}`,
+    `Balance corrected by Rs ${result.delta}: ${reason}`,
     result.entry.id,
   );
-  return res.json({ ...result, entry: decorate(result.entry), balancePaise: balancePaise() });
+  return res.json({ ...result, entry: decorate(result.entry), balance: balance() });
 });
 
 router.get('/adjustments', requireMaster, (_req, res) => {
   res.json({
     entries: sortedEntries(store.entries().filter((e) => e.kind === 'adjustment')).map(decorate),
-    balancePaise: balancePaise(),
+    balance: balance(),
   });
 });
 
@@ -1015,9 +1033,9 @@ router.put('/settings', requireMaster, (req, res) => {
     },
   );
   if (req.body.showPaidBoard !== undefined) patch.showPaidBoard = !!req.body.showPaidBoard;
-  if (req.body.defaultAmountPaise !== undefined) {
-    const amount = Math.round(Number(req.body.defaultAmountPaise));
-    if (Number.isFinite(amount) && amount >= 0) patch.defaultAmountPaise = amount;
+  if (req.body.defaultAmount !== undefined) {
+    const amount = readAmount(req.body.defaultAmount);
+    if (typeof amount === 'number' && amount >= 0) patch.defaultAmount = amount;
   }
   if (req.body.viewerSessionDays !== undefined) {
     const days = Math.round(Number(req.body.viewerSessionDays));
@@ -1038,21 +1056,22 @@ router.post('/opening-balance', requireMaster, (req, res) => {
       .status(409)
       .json({ error: 'exists', message: 'The opening balance has already been set.' });
   }
-  const amountPaise = Math.round(Number(req.body.amountPaise) || 0);
-  if (amountPaise <= 0) return bad(res, 'Enter the amount currently in the register.');
+  const amount = readAmount(req.body.amount);
+  if (amount && amount.error) return bad(res, amount.error);
+  if (!amount || amount <= 0) return bad(res, 'Enter the amount currently in the register.');
 
   const occurredOn = req.body.occurredOn ? new Date(req.body.occurredOn) : new Date();
   const entry = postEntry({
     direction: 'credit',
     kind: 'opening',
-    amountPaise,
+    amount,
     note: String(req.body.note || 'Balance carried over from the club register'),
     occurredOn: occurredOn.toISOString(),
     adminId: req.admin.id,
   });
 
-  audit(req, 'ledger.opening', 'LedgerEntry', `Opening balance set to Rs ${amountPaise / 100}`, entry.id);
-  return res.json({ entry: decorate(entry), balancePaise: balancePaise() });
+  audit(req, 'ledger.opening', 'LedgerEntry', `Opening balance set to Rs ${amount}`, entry.id);
+  return res.json({ entry: decorate(entry), balance: balance() });
 });
 
 export default router;

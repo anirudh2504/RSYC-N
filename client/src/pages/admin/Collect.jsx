@@ -44,7 +44,7 @@ export default function Collect() {
     load();
   }, [load]);
 
-  const rows = board ? board.rows.filter((r) => r.duePaise > 0) : [];
+  const rows = board ? board.rows.filter((r) => r.due > 0) : [];
   const exemptCount = board ? board.rows.length - rows.length : 0;
 
   const record = async () => {
@@ -52,13 +52,13 @@ export default function Collect() {
     try {
       const res = await api.post('/admin/collect', {
         period,
-        payments: [{ memberId: asking.memberId, amountPaise: asking.owedPaise }],
+        payments: [{ memberId: asking.memberId, amount: asking.owed }],
       });
       // The server hands back the recalculated board, so the list, the totals
       // and the progress bar all move together with no second request.
       if (res.board) setBoard(res.board);
       else load();
-      toast(`${money(asking.owedPaise)} recorded for ${asking.name}`, 'ok');
+      toast(`${money(asking.owed)} recorded for ${asking.name}`, 'ok');
       setAsking(null);
     } catch (err) {
       toast(err.message, 'bad');
@@ -104,14 +104,14 @@ export default function Collect() {
                 {board.paidCount} of {board.payableCount} paid
               </p>
               <p className="num" style={{ fontWeight: 700 }}>
-                {money(board.collectedPaise)}
+                {money(board.collected)}
                 <span className="small muted" style={{ fontWeight: 400 }}>
                   {' '}
-                  / {money(board.expectedPaise)}
+                  / {money(board.expected)}
                 </span>
               </p>
             </div>
-            <Progress value={board.collectedPaise} max={board.expectedPaise} />
+            <Progress value={board.collected} max={board.expected} />
           </Card>
 
           {rows.length === 0 ? (
@@ -122,7 +122,7 @@ export default function Collect() {
             <Card>
               <CardHead title="All contributing members" />
               {rows.map((r) => {
-                const owed = Math.max(r.duePaise - r.paidPaise, 0);
+                const owed = Math.max(r.due - r.paid, 0);
                 const done = r.status === 'paid';
                 return (
                   <div key={r.memberId} className={`check-row${done ? ' is-done' : ''}`}>
@@ -135,9 +135,9 @@ export default function Collect() {
                         setAsking({
                           memberId: r.memberId,
                           name: r.name,
-                          owedPaise: owed,
-                          duePaise: r.duePaise,
-                          paidPaise: r.paidPaise,
+                          owed: owed,
+                          due: r.due,
+                          paid: r.paid,
                         })
                       }
                     />
@@ -145,9 +145,9 @@ export default function Collect() {
                       <span className="check-name">{r.name}</span>
                       <span className="list-meta" style={{ display: 'block' }}>
                         {done
-                          ? `${money(r.paidPaise)} received`
+                          ? `${money(r.paid)} received`
                           : `${money(owed)} due${
-                              r.paidPaise > 0 ? ` · ${money(r.paidPaise)} part paid` : ''
+                              r.paid > 0 ? ` · ${money(r.paid)} part paid` : ''
                             }`}
                         {r.pendingCount > 1 ? ` · ${r.pendingCount} months behind` : ''}
                       </span>
@@ -180,7 +180,7 @@ export default function Collect() {
       >
         {asking ? (
           <>
-            <p className="confirm-figure num">{money(asking.owedPaise)}</p>
+            <p className="confirm-figure num">{money(asking.owed)}</p>
             <p style={{ color: 'var(--ink-2)' }}>
               from <strong>{asking.name}</strong>, as the contribution for{' '}
               <strong>{periodLabelLong(period)}</strong>.

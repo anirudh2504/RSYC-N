@@ -36,9 +36,9 @@ export function liveEntries() {
   return store.entries().filter((e) => !e.isReversed);
 }
 
-export function balancePaise() {
+export function balance() {
   return allEntries().reduce(
-    (sum, e) => sum + (e.direction === 'credit' ? e.amountPaise : -e.amountPaise),
+    (sum, e) => sum + (e.direction === 'credit' ? e.amount : -e.amount),
     0,
   );
 }
@@ -87,17 +87,17 @@ export function monthTotals(period) {
   let debit = 0;
   allEntries().forEach((e) => {
     if (!e.occurredOn.startsWith(period)) return;
-    if (e.direction === 'credit') credit += e.amountPaise;
-    else debit += e.amountPaise;
+    if (e.direction === 'credit') credit += e.amount;
+    else debit += e.amount;
   });
-  return { creditPaise: credit, debitPaise: debit, netPaise: credit - debit };
+  return { credit: credit, debit: debit, net: credit - debit };
 }
 
 /** Total spent against one event, for the event detail page. */
-export function eventSpendPaise(eventId) {
+export function eventSpend(eventId) {
   return liveEntries()
     .filter((e) => e.eventId === eventId && e.direction === 'debit')
-    .reduce((sum, e) => sum + e.amountPaise, 0);
+    .reduce((sum, e) => sum + e.amount, 0);
 }
 
 export function eventExpenses(eventId) {
@@ -114,7 +114,7 @@ export function eventExpenses(eventId) {
 export function postEntry({
   direction,
   kind,
-  amountPaise,
+  amount,
   memberId = null,
   payerName = null,
   allocations = [],
@@ -131,7 +131,7 @@ export function postEntry({
   return store.addEntry({
     direction,
     kind,
-    amountPaise,
+    amount,
     memberId,
     payerName,
     allocations,
@@ -164,7 +164,7 @@ export function reverseEntry(entryId, reason, adminId) {
   const reversal = postEntry({
     direction: original.direction === 'credit' ? 'debit' : 'credit',
     kind: 'reversal',
-    amountPaise: original.amountPaise,
+    amount: original.amount,
     memberId: original.memberId,
     reason: `Reversal - ${reason}`,
     reversesEntryId: original.id,
@@ -180,18 +180,18 @@ export function reverseEntry(entryId, reason, adminId) {
  * codebase. The master admin states what the balance should be, and the system
  * posts an ordinary, visible entry for the difference.
  */
-export function postAdjustment(targetPaise, reason, adminId) {
-  const current = balancePaise();
-  const delta = targetPaise - current;
+export function postAdjustment(target, reason, adminId) {
+  const current = balance();
+  const delta = target - current;
   if (delta === 0) return { error: 'That is already the balance. Nothing to correct.' };
 
   const entry = postEntry({
     direction: delta > 0 ? 'credit' : 'debit',
     kind: 'adjustment',
-    amountPaise: Math.abs(delta),
+    amount: Math.abs(delta),
     reason,
     adminId,
   });
 
-  return { entry, deltaPaise: delta, previousPaise: current, newPaise: targetPaise };
+  return { entry, delta: delta, previousBalance: current, newBalance: target };
 }

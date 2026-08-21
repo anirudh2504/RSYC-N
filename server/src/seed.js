@@ -9,7 +9,7 @@
 
 import bcrypt from 'bcryptjs';
 import { config } from './config.js';
-import { periodRange, addMonths, rupees } from './utils.js';
+import { periodRange, addMonths } from './utils.js';
 
 const HASH_ROUNDS = 8;
 
@@ -51,7 +51,7 @@ const ADMINS = [
 /**
  * joined  — month they started contributing
  * through — last month they have fully paid for (null = never paid)
- * amount  — monthly contribution in rupees
+ * amount  — monthly contribution, whole rupees
  * enabled — false means "in the club, not on the collection list"
  */
 const MEMBERS = [
@@ -213,7 +213,7 @@ export function buildSeed() {
     plans.push({
       id: `pln_${id}`,
       memberId: id,
-      amountPaise: rupees(m.amount),
+      amount: m.amount,
       isEnabled: m.enabled,
       effectiveFrom: m.joined,
       effectiveTo: null,
@@ -227,7 +227,7 @@ export function buildSeed() {
     id: 'led_opening',
     direction: 'credit',
     kind: 'opening',
-    amountPaise: rupees(45000),
+    amount: 45000,
     memberId: null,
     payerName: null,
     allocations: [],
@@ -251,7 +251,7 @@ export function buildSeed() {
     if (!src.through || !src.enabled) return;
 
     const periods = periodRange(src.joined, src.through);
-    const amountPaise = rupees(src.amount);
+    const amount = src.amount;
 
     // Two members pay several months at once, so the feed shows multi-month
     // allocations rather than one tidy row per month.
@@ -262,21 +262,21 @@ export function buildSeed() {
       const rest = periods.slice(chunk.length);
       if (chunk.length) {
         seq += 1;
-        entries.push(contribution(member, chunk, amountPaise, seq, src));
+        entries.push(contribution(member, chunk, amount, seq, src));
       }
       rest.forEach((p) => {
         seq += 1;
-        entries.push(contribution(member, [p], amountPaise, seq, src));
+        entries.push(contribution(member, [p], amount, seq, src));
       });
     } else {
       periods.forEach((p) => {
         seq += 1;
-        entries.push(contribution(member, [p], amountPaise, seq, src));
+        entries.push(contribution(member, [p], amount, seq, src));
       });
     }
   });
 
-  function contribution(member, periods, amountPaise, n, src) {
+  function contribution(member, periods, amount, n, src) {
     const last = periods[periods.length - 1];
     // Months paid in advance were still handed over today, not in the future.
     const offset = Math.min(offsetOf(last), 0);
@@ -286,10 +286,10 @@ export function buildSeed() {
       id: `led_c${String(n).padStart(3, '0')}`,
       direction: 'credit',
       kind: 'contribution',
-      amountPaise: amountPaise * periods.length,
+      amount: amount * periods.length,
       memberId: member.id,
       payerName: null,
-      allocations: periods.map((p) => ({ period: p, amountPaise })),
+      allocations: periods.map((p) => ({ period: p, amount })),
       reason: null,
       takenBy: null,
       note: periods.length > 1 ? `${periods.length} months paid together` : '',
@@ -310,10 +310,10 @@ export function buildSeed() {
     id: 'led_partial',
     direction: 'credit',
     kind: 'contribution',
-    amountPaise: rupees(100),
+    amount: 100,
     memberId: partialMember.id,
     payerName: null,
-    allocations: [{ period: CURRENT_PERIOD, amountPaise: rupees(100) }],
+    allocations: [{ period: CURRENT_PERIOD, amount: 100 }],
     reason: null,
     takenBy: null,
     note: 'Part payment, balance promised next week',
@@ -333,7 +333,7 @@ export function buildSeed() {
       id: `led_d${i + 1}`,
       direction: 'credit',
       kind: 'donation',
-      amountPaise: rupees(d.amount),
+      amount: d.amount,
       memberId: null,
       payerName: d.payer,
       allocations: [],
@@ -357,7 +357,7 @@ export function buildSeed() {
       id: `led_e${i + 1}`,
       direction: 'debit',
       kind: 'expense',
-      amountPaise: rupees(e.amount),
+      amount: e.amount,
       memberId: null,
       payerName: null,
       allocations: [],
@@ -381,10 +381,10 @@ export function buildSeed() {
     id: 'led_wrong',
     direction: 'credit',
     kind: 'contribution',
-    amountPaise: rupees(2000),
+    amount: 2000,
     memberId: members[6].id,
     payerName: null,
-    allocations: [{ period: P(-2), amountPaise: rupees(2000) }],
+    allocations: [{ period: P(-2), amount: 2000 }],
     reason: null,
     takenBy: null,
     note: '',
@@ -401,7 +401,7 @@ export function buildSeed() {
     id: 'led_wrong_rev',
     direction: 'debit',
     kind: 'reversal',
-    amountPaise: rupees(2000),
+    amount: 2000,
     memberId: members[6].id,
     payerName: null,
     allocations: [],
@@ -423,7 +423,7 @@ export function buildSeed() {
     id: 'led_adj',
     direction: 'debit',
     kind: 'adjustment',
-    amountPaise: rupees(300),
+    amount: 300,
     memberId: null,
     payerName: null,
     allocations: [],
@@ -526,8 +526,8 @@ export function buildSeed() {
   });
 
   const reminders = [
-    { id: 'rem_1', memberId: 'mem_06', periods: [P(-2), P(-1), P(0)], amountPaise: rupees(600), channel: 'whatsapp', sentByAdminId: 'adm_2', sentAt: dateFor(0, 14) },
-    { id: 'rem_2', memberId: 'mem_10', periods: [P(-3), P(-2), P(-1), P(0)], amountPaise: rupees(800), channel: 'whatsapp', sentByAdminId: 'adm_2', sentAt: dateFor(0, 14) },
+    { id: 'rem_1', memberId: 'mem_06', periods: [P(-2), P(-1), P(0)], amount: 600, channel: 'whatsapp', sentByAdminId: 'adm_2', sentAt: dateFor(0, 14) },
+    { id: 'rem_2', memberId: 'mem_10', periods: [P(-3), P(-2), P(-1), P(0)], amount: 800, channel: 'whatsapp', sentByAdminId: 'adm_2', sentAt: dateFor(0, 14) },
   ];
 
   const settings = {
@@ -613,7 +613,7 @@ export function buildSeed() {
     pinUpdatedByAdminId: 'adm_master',
     viewerSessionDays: config.viewerSessionDays,
     showPaidBoard: true,
-    defaultAmountPaise: rupees(200),
+    defaultAmount: 200,
     notice:
       'Kabaddi Pratiyogita registration closes this Sunday. Team entries with Devendra ji or Karni ji.',
     locale: 'en',

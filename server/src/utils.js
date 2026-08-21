@@ -1,9 +1,11 @@
 /**
- * Shared helpers. Money is always an integer number of paise — never a float,
- * never a string. ₹200 is 20000. Formatting happens in the client, never here.
+ * Shared helpers.
+ *
+ * Money is always a WHOLE NUMBER OF RUPEES — never a float, never a string.
+ * ₹200 is 200. Paise are not recorded anywhere: the club never deals in them,
+ * and refusing decimals is what keeps every amount an exact integer, so sums
+ * can never drift the way floating point money does.
  */
-
-export const rupees = (r) => Math.round(r * 100);
 
 /** 'YYYY-MM' for a Date. */
 export function periodOf(date) {

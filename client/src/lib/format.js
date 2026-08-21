@@ -1,29 +1,39 @@
 /**
- * Money arrives from the API as an integer number of paise and is formatted
- * here, at the very last moment, using Indian digit grouping.
+ * Money arrives from the API as a whole number of rupees — ₹200 is 200 — and
+ * is formatted here, at the very last moment, using Indian digit grouping.
+ *
+ * There are no paise anywhere in this app. Amounts are entered as whole rupees
+ * and stored as integers, so nothing ever needs rounding and no sum can drift.
  */
 
 const inr = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
-const inr2 = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function rupees(paise) {
-  const value = (Number(paise) || 0) / 100;
-  return Number.isInteger(value) ? inr.format(value) : inr2.format(value);
+export function rupees(amount) {
+  return inr.format(Math.round(Number(amount) || 0));
 }
 
 /** With the symbol. `signed` adds + or - for ledger rows. */
-export function money(paise, signed = false) {
-  const value = Number(paise) || 0;
+export function money(amount, signed = false) {
+  const value = Math.round(Number(amount) || 0);
   const sign = signed ? (value < 0 ? '−' : '+') : value < 0 ? '−' : '';
   return `${sign}₹${rupees(Math.abs(value))}`;
 }
 
 /** Short form for headline figures: ₹1.84 Lakh. */
-export function moneyShort(paise) {
-  const value = (Number(paise) || 0) / 100;
+export function moneyShort(amount) {
+  const value = Math.round(Number(amount) || 0);
   if (Math.abs(value) >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
   if (Math.abs(value) >= 100000) return `₹${(value / 100000).toFixed(2)} Lakh`;
-  return `₹${rupees(paise)}`;
+  return `₹${rupees(value)}`;
+}
+
+/**
+ * Keeps a money field to whole rupees as it is typed. A full stop, a comma or a
+ * minus sign simply never appears, which is a clearer rule than accepting a
+ * decimal and rejecting it on save.
+ */
+export function onlyDigits(text) {
+  return String(text || '').replace(/[^0-9]/g, '');
 }
 
 const ONES = [
@@ -44,8 +54,8 @@ function under1000(n) {
  * The amount written out, shown under the entry field. This is what catches
  * the ₹5,000-instead-of-₹500 slip before it is saved.
  */
-export function amountInWords(paise) {
-  const value = Math.floor((Number(paise) || 0) / 100);
+export function amountInWords(amount) {
+  const value = Math.floor(Number(amount) || 0);
   if (value <= 0) return '';
 
   const crore = Math.floor(value / 10000000);

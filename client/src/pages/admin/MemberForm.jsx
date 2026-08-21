@@ -7,7 +7,7 @@ import { MemberAvatar } from '../../components/Ornaments.jsx';
 import FilePicker from '../../components/FilePicker.jsx';
 import UploadTarget from '../../components/UploadTarget.jsx';
 import { Button, Card, Field, Notice, PageHead, useToast } from '../../components/ui.jsx';
-import { currentPeriod, money, periodLabel } from '../../lib/format.js';
+import { currentPeriod, money, onlyDigits, periodLabel } from '../../lib/format.js';
 import { uploadImage } from '../../lib/upload.js';
 
 /** Four things, as the club asked: name, phone, collection on or off, amount. */
@@ -36,8 +36,8 @@ export default function MemberForm() {
     }
   };
 
-  const defaultPaise = membersQuery.data ? membersQuery.data.defaultAmountPaise : 20000;
-  const effectiveAmount = amount === '' ? String(defaultPaise / 100) : amount;
+  const defaultAmount = membersQuery.data ? membersQuery.data.defaultAmount : 200;
+  const effectiveAmount = amount === '' ? String(defaultAmount) : amount;
 
   const months = [];
   for (let i = 0; i < 13; i += 1) {
@@ -56,7 +56,7 @@ export default function MemberForm() {
         fatherName,
         phone,
         isEnabled: enabled,
-        amountPaise: Math.round((Number(effectiveAmount) || 0) * 100),
+        amount: Math.round(Number(effectiveAmount) || 0),
         joinedPeriod,
         photoUrl: photo,
       });
@@ -172,15 +172,15 @@ export default function MemberForm() {
               <Field
                 label="Amount every month"
                 id="m-amount"
-                hint={`Club default is ${money(defaultPaise)}`}
+                hint={`Club default is ${money(defaultAmount)}`}
               >
                 <input
                   id="m-amount"
                   className="input num"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder={String(defaultPaise / 100)}
-                  inputMode="decimal"
+                  onChange={(e) => setAmount(onlyDigits(e.target.value))}
+                  placeholder={String(defaultAmount)}
+                  inputMode="numeric"
                 />
               </Field>
 

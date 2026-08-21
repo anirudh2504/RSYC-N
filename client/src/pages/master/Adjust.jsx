@@ -32,15 +32,15 @@ export default function Adjust() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return null;
 
-  const targetPaise = Math.round((Number(target) || 0) * 100);
-  const deltaPaise = target === '' ? 0 : targetPaise - data.balancePaise;
+  const targetAmount = Math.round(Number(target) || 0);
+  const delta = target === '' ? 0 : target - data.balance;
 
   const submit = async (e) => {
     e.preventDefault();
     setFormError('');
     setBusy(true);
     try {
-      await api.post('/admin/adjustments', { targetPaise, reason });
+      await api.post('/admin/adjustments', { target, reason });
       toast('Balance corrected', 'ok');
       setTarget('');
       setReason('');
@@ -67,7 +67,7 @@ export default function Adjust() {
           <div className="row-between">
             <span className="label">Balance right now</span>
             <span className="num" style={{ fontWeight: 700, fontSize: 'var(--t-md)' }}>
-              {money(data.balancePaise)}
+              {money(data.balance)}
             </span>
           </div>
 
@@ -76,23 +76,23 @@ export default function Adjust() {
               id="adj-target"
               className="input input-amount num"
               value={target}
-              onChange={(e) => setTarget(e.target.value.replace(/[^0-9.]/g, ''))}
-              inputMode="decimal"
+              onChange={(e) => setTarget(onlyDigits(e.target.value))}
+              inputMode="numeric"
               placeholder="0"
               required
             />
           </Field>
 
-          {targetPaise > 0 ? (
+          {target > 0 ? (
             <p className="hint center" style={{ marginTop: -6, textTransform: 'capitalize' }}>
-              {amountInWords(targetPaise)}
+              {amountInWords(target)}
             </p>
           ) : null}
 
-          {deltaPaise !== 0 && target !== '' ? (
+          {delta !== 0 && target !== '' ? (
             <Notice kind="warn">
-              This will post a {deltaPaise > 0 ? 'credit' : 'debit'} of{' '}
-              <strong>{money(Math.abs(deltaPaise))}</strong> as a balance correction. It appears in
+              This will post a {delta > 0 ? 'credit' : 'debit'} of{' '}
+              <strong>{money(Math.abs(delta))}</strong> as a balance correction. It appears in
               the ledger everyone reads.
             </Notice>
           ) : null}
@@ -116,7 +116,7 @@ export default function Adjust() {
             type="submit"
             variant="danger"
             block
-            disabled={busy || deltaPaise === 0 || reason.trim().length < 10}
+            disabled={busy || delta === 0 || reason.trim().length < 10}
           >
             {busy ? 'Posting…' : 'Post the correction'}
           </Button>

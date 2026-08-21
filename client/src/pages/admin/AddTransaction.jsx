@@ -4,7 +4,7 @@ import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
 import { Button, Card, CardHead, Field, Loading, Notice, PageHead, useToast } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
-import { amountInWords, money, periodLabel, todayInput } from '../../lib/format.js';
+import { amountInWords, money, onlyDigits, periodLabel, todayInput } from '../../lib/format.js';
 
 /**
  * One form for both directions.
@@ -38,21 +38,21 @@ export default function AddTransaction() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const amountPaise = Math.round((Number(rupees) || 0) * 100);
+  const amount = Math.round(Number(rupees) || 0);
   const members = membersQuery.data ? membersQuery.data.members : [];
   const events = eventsQuery.data ? eventsQuery.data.events : [];
 
   // Ask the server which months this amount should settle. Debounced, so it
   // does not fire on every keystroke.
   useEffect(() => {
-    if (direction !== 'credit' || !memberId || amountPaise <= 0) {
+    if (direction !== 'credit' || !memberId || amount <= 0) {
       setAllocations([]);
       setChosen({});
       return undefined;
     }
     const t = setTimeout(() => {
       api
-        .get(`/admin/transactions/suggest?memberId=${memberId}&amountPaise=${amountPaise}`)
+        .get(`/admin/transactions/suggest?memberId=${memberId}&amount=${amount}`)
         .then((data) => {
           setAllocations(data.allocations);
           const next = {};
@@ -67,16 +67,16 @@ export default function AddTransaction() {
         });
     }, 300);
     return () => clearTimeout(t);
-  }, [direction, memberId, amountPaise]);
+  }, [direction, memberId, amount]);
 
   const selected = allocations.filter((a) => chosen[a.period]);
-  const allocatedPaise = selected.reduce((s, a) => s + a.amountPaise, 0);
+  const allocated = selected.reduce((s, a) => s + a.amount, 0);
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (amountPaise <= 0) {
+    if (amount <= 0) {
       setError('Enter an amount greater than zero.');
       return;
     }
@@ -85,7 +85,7 @@ export default function AddTransaction() {
     try {
       const body = {
         direction,
-        amountPaise,
+        amount,
         occurredOn: new Date(`${occurredOn}T06:00:00`).toISOString(),
         note,
       };
@@ -144,17 +144,17 @@ export default function AddTransaction() {
               id="amount"
               className="input input-amount num"
               value={rupees}
-              onChange={(e) => setRupees(e.target.value.replace(/[^0-9.]/g, ''))}
-              inputMode="decimal"
+              onChange={(e) => setRupees(onlyDigits(e.target.value))}
+              inputMode="numeric"
               placeholder="0"
               autoFocus
               required
             />
           </Field>
 
-          {amountPaise > 0 ? (
+          {amount > 0 ? (
             <p className="hint center" style={{ marginTop: -6, textTransform: 'capitalize' }}>
-              {amountInWords(amountPaise)}
+              {amountInWords(amount)}
             </p>
           ) : null}
 
@@ -223,13 +223,13 @@ export default function AddTransaction() {
                         <span className="check-body">
                           <span className="check-name">{periodLabel(a.period)}</span>
                         </span>
-                        <span className="num small muted">{money(a.amountPaise)}</span>
+                        <span className="num small muted">{money(a.amount)}</span>
                       </label>
                     ))}
                   </div>
                   <p className="hint" style={{ marginTop: 6 }}>
-                    Ticked automatically from the amount. {money(allocatedPaise)} of{' '}
-                    {money(amountPaise)} allocated.
+                    Ticked automatically from the amount. {money(allocated)} of{' '}
+                    {money(amount)} allocated.
                   </p>
                 </div>
               ) : null}

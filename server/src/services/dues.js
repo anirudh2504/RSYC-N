@@ -36,7 +36,7 @@ function paidForPeriod(memberId, period) {
     .filter((e) => e.memberId === memberId && e.direction === 'credit')
     .reduce((sum, e) => {
       const hit = (e.allocations || []).filter((a) => a.period === period);
-      return sum + hit.reduce((s, a) => s + a.amountPaise, 0);
+      return sum + hit.reduce((s, a) => s + a.amount, 0);
     }, 0);
 }
 
@@ -52,19 +52,19 @@ export function duesForMember(memberId, upto = currentPeriod()) {
   const periods = periodRange(member.joinedPeriod, upto);
   const months = periods.map((period) => {
     const plan = planFor(memberId, period);
-    const duePaise = plan && plan.isEnabled ? plan.amountPaise : 0;
-    const paidPaise = paidForPeriod(memberId, period);
+    const due = plan && plan.isEnabled ? plan.amount : 0;
+    const paid = paidForPeriod(memberId, period);
 
     let status = 'exempt';
-    if (duePaise > 0) {
-      if (paidPaise >= duePaise) status = 'paid';
-      else if (paidPaise > 0) status = 'partial';
+    if (due > 0) {
+      if (paid >= due) status = 'paid';
+      else if (paid > 0) status = 'partial';
       else status = 'unpaid';
-    } else if (paidPaise > 0) {
+    } else if (paid > 0) {
       status = 'paid';
     }
 
-    return { period, duePaise, paidPaise, status, outstandingPaise: Math.max(duePaise - paidPaise, 0) };
+    return { period, due, paid, status, outstanding: Math.max(due - paid, 0) };
   });
 
   const pending = months.filter((m) => m.status === 'unpaid' || m.status === 'partial');
@@ -75,7 +75,7 @@ export function duesForMember(memberId, upto = currentPeriod()) {
     .filter((e) => e.memberId === memberId && e.direction === 'credit')
     .flatMap((e) => e.allocations || [])
     .filter((a) => a.period > upto)
-    .reduce((sum, a) => sum + a.amountPaise, 0);
+    .reduce((sum, a) => sum + a.amount, 0);
 
   return {
     memberId,
@@ -85,14 +85,14 @@ export function duesForMember(memberId, upto = currentPeriod()) {
     photoUrl: member.photoUrl || null,
     status: member.status,
     joinedPeriod: member.joinedPeriod,
-    monthlyAmountPaise: plan ? plan.amountPaise : 0,
+    monthlyAmount: plan ? plan.amount : 0,
     isEnabled: plan ? plan.isEnabled : false,
     months,
     pendingPeriods: pending.map((m) => m.period),
     pendingCount: pending.length,
-    pendingPaise: pending.reduce((sum, m) => sum + m.outstandingPaise, 0),
-    totalPaidPaise: months.reduce((sum, m) => sum + m.paidPaise, 0) + advance,
-    advancePaise: advance,
+    pending: pending.reduce((sum, m) => sum + m.outstanding, 0),
+    totalPaid: months.reduce((sum, m) => sum + m.paid, 0) + advance,
+    advance: advance,
   };
 }
 
@@ -107,7 +107,7 @@ export function duesForEveryone(upto = currentPeriod()) {
 export function pendingMembers(upto = currentPeriod()) {
   return duesForEveryone(upto)
     .filter((d) => d.pendingCount > 0)
-    .sort((a, b) => b.pendingCount - a.pendingCount || b.pendingPaise - a.pendingPaise)
+    .sort((a, b) => b.pendingCount - a.pendingCount || b.pending - a.pending)
     .map((d) => {
       const last = store.lastReminderFor(d.memberId);
       return { ...d, lastRemindedAt: last ? last.sentAt : null };
@@ -124,23 +124,23 @@ export function collectionBoard(period = currentPeriod()) {
         memberId: d.memberId,
         name: d.name,
         phone: d.phone,
-        duePaise: month.duePaise,
-        paidPaise: month.paidPaise,
+        due: month.due,
+        paid: month.paid,
         status: month.status,
         pendingCount: d.pendingCount,
       };
     })
     .filter(Boolean);
 
-  const expected = rows.reduce((sum, r) => sum + r.duePaise, 0);
-  const collected = rows.reduce((sum, r) => sum + Math.min(r.paidPaise, r.duePaise), 0);
-  const payable = rows.filter((r) => r.duePaise > 0);
+  const expected = rows.reduce((sum, r) => sum + r.due, 0);
+  const collected = rows.reduce((sum, r) => sum + Math.min(r.paid, r.due), 0);
+  const payable = rows.filter((r) => r.due > 0);
 
   return {
     period,
     rows,
-    expectedPaise: expected,
-    collectedPaise: collected,
+    expected: expected,
+    collected: collected,
     paidCount: payable.filter((r) => r.status === 'paid').length,
     payableCount: payable.length,
   };
@@ -151,40 +151,40 @@ export function collectionBoard(period = currentPeriod()) {
  * the credit form fill its own month selection in: a member who owes Rs 200 a
  * month and hands over Rs 600 gets their three oldest unpaid months ticked.
  */
-export function suggestAllocations(memberId, amountPaise) {
+export function suggestAllocations(memberId, amount) {
   const dues = duesForMember(memberId);
   if (!dues) return [];
 
   const out = [];
-  let left = amountPaise;
+  let left = amount;
 
   dues.months
-    .filter((m) => m.outstandingPaise > 0)
+    .filter((m) => m.outstanding > 0)
     .forEach((m) => {
       if (left <= 0) return;
-      const take = Math.min(left, m.outstandingPaise);
-      out.push({ period: m.period, amountPaise: take });
+      const take = Math.min(left, m.outstanding);
+      out.push({ period: m.period, amount: take });
       left -= take;
     });
 
   // Anything still in hand rolls forward into future months as an advance.
   let period = currentPeriod();
-  const monthly = dues.monthlyAmountPaise;
+  const monthly = dues.monthlyAmount;
   let guard = 0;
   while (left > 0 && monthly > 0 && guard < 24) {
     guard += 1;
     period = nextPeriod(period);
     if (out.some((o) => o.period === period)) continue;
     const take = Math.min(left, monthly);
-    out.push({ period, amountPaise: take });
+    out.push({ period, amount: take });
     left -= take;
   }
 
   // If there is no plan to spread it over, put the remainder on this month.
   if (left > 0) {
     const here = out.find((o) => o.period === currentPeriod());
-    if (here) here.amountPaise += left;
-    else out.push({ period: currentPeriod(), amountPaise: left });
+    if (here) here.amount += left;
+    else out.push({ period: currentPeriod(), amount: left });
   }
 
   return out.sort((a, b) => (a.period < b.period ? -1 : 1));

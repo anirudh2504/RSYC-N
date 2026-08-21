@@ -389,7 +389,7 @@ export default function EventEditor() {
 
       <div className="row-between" style={{ marginBottom: 10, gap: 10 }}>
         <p style={{ fontWeight: 700 }}>
-          {money(data.spendPaise)}
+          {money(data.spend)}
           <span className="small muted" style={{ fontWeight: 400 }}>
             {' '}
             on {data.expenses.length} {data.expenses.length === 1 ? 'entry' : 'entries'}
@@ -442,7 +442,7 @@ export default function EventEditor() {
         {unlinking ? (
           <>
             <p className="confirm-figure num" style={{ color: 'var(--debit)' }}>
-              {money(unlinking.amountPaise)}
+              {money(unlinking.amount)}
             </p>
             <p style={{ color: 'var(--ink-2)' }}>{unlinking.reason}</p>
             <div className="notice-box notice-info" style={{ marginTop: 12 }}>

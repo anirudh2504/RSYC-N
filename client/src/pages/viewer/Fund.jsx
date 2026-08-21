@@ -49,19 +49,19 @@ export default function Fund() {
         <Jali className="balance-jali" />
         <div className="balance-body">
           <p className="balance-label">Club fund balance</p>
-          <p className="balance-figure num">{money(data.balancePaise)}</p>
+          <p className="balance-figure num">{money(data.balance)}</p>
           <p className="balance-note">
-            {moneyShort(data.balancePaise)} &middot; as of today &middot; {data.memberCount} members
+            {moneyShort(data.balance)} &middot; as of today &middot; {data.memberCount} members
           </p>
 
           <dl className="balance-split">
             <div>
               <dt>In this month</dt>
-              <dd className="num in-figure">{money(data.month.creditPaise)}</dd>
+              <dd className="num in-figure">{money(data.month.credit)}</dd>
             </div>
             <div>
               <dt>Out this month</dt>
-              <dd className="num out-figure">{money(data.month.debitPaise)}</dd>
+              <dd className="num out-figure">{money(data.month.debit)}</dd>
             </div>
           </dl>
         </div>
@@ -83,13 +83,13 @@ export default function Fund() {
               </p>
             </div>
             <p className="num" style={{ fontWeight: 700, textAlign: 'right' }}>
-              {money(collection.collectedPaise)}
+              {money(collection.collected)}
               <span className="small muted" style={{ display: 'block', fontWeight: 400 }}>
-                of {money(collection.expectedPaise)}
+                of {money(collection.expected)}
               </span>
             </p>
           </div>
-          <Progress value={collection.collectedPaise} max={collection.expectedPaise} />
+          <Progress value={collection.collected} max={collection.expected} />
           <Link to="/fund/collection" className="small" style={{ display: 'inline-block', marginTop: 10 }}>
             See who has paid →
           </Link>

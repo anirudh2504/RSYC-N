@@ -105,8 +105,11 @@ phone number cannot leak from it through a mistake in a conditional.
 
 ## The rules the ledger follows
 
-1. **Money is an integer number of paise.** ₹200 is `20000`. Never a float.
-   Formatting to `₹1,84,500` happens in the browser at the last moment.
+1. **Money is a whole number of rupees.** ₹200 is `200`. Never a float, and
+   paise are not recorded at all — the club does not deal in them. Decimals are
+   refused rather than rounded, at the input, at the API and in the schema, so
+   every amount stays an exact integer and no sum can ever drift. Formatting to
+   `₹1,84,500` happens in the browser at the last moment.
 
 2. **The balance is a sum over the entries, never a stored number.** Two admins
    saving at the same moment cannot corrupt it, and fixing an entry fixes the
