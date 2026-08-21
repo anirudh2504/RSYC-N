@@ -68,17 +68,6 @@ export default function Unlock() {
           </Button>
         </form>
 
-        {session.demoHint ? (
-          <div className="demo-box">
-            <p style={{ fontWeight: 700, color: 'var(--ink)' }}>Demo data — nothing is saved</p>
-            <p>
-              Club PIN <b>{session.demoHint.pin}</b>
-            </p>
-            <p>
-              Master admin <b>{session.demoHint.email}</b> / <b>{session.demoHint.password}</b>
-            </p>
-          </div>
-        ) : null}
 
         {/* No admin sign-in link here on purpose. This screen is for ordinary
             members; admins reach their own sign-in from the menu. */}

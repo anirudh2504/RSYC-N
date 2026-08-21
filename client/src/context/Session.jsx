@@ -14,7 +14,12 @@ import { api } from '../lib/api.js';
 const SessionContext = createContext(null);
 
 export function SessionProvider({ children }) {
-  const [state, setState] = useState({ loading: true, viewer: false, admin: null, demoHint: null });
+  const [state, setState] = useState({
+    loading: true,
+    viewer: false,
+    admin: null,
+    setupNeeded: false,
+  });
 
   const refresh = useCallback(async () => {
     try {
@@ -23,11 +28,11 @@ export function SessionProvider({ children }) {
         loading: false,
         viewer: !!data.viewer,
         admin: data.admin || null,
-        demoHint: data.demoHint || null,
+        setupNeeded: !!data.setupNeeded,
       });
       return data;
     } catch {
-      setState({ loading: false, viewer: false, admin: null, demoHint: null });
+      setState({ loading: false, viewer: false, admin: null, setupNeeded: false });
       return null;
     }
   }, []);
@@ -62,6 +67,15 @@ export function SessionProvider({ children }) {
     await refresh();
   }, [refresh]);
 
+  /** One time only: found the club and become its master admin. */
+  const setup = useCallback(
+    async (fields) => {
+      await api.post('/auth/setup', fields);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const value = useMemo(
     () => ({
       ...state,
@@ -72,8 +86,9 @@ export function SessionProvider({ children }) {
       lock,
       login,
       logout,
+      setup,
     }),
-    [state, refresh, unlock, lock, login, logout],
+    [state, refresh, unlock, lock, login, logout, setup],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

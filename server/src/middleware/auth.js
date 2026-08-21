@@ -11,7 +11,6 @@
 
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
-import { store } from '../store.js';
 
 export const VIEWER_COOKIE = 'rsyc_view';
 export const ADMIN_COOKIE = 'rsyc_admin';
@@ -24,8 +23,8 @@ const cookieBase = {
   path: '/',
 };
 
-export function issueViewerCookie(res) {
-  const settings = store.settings();
+export function issueViewerCookie(res, db) {
+  const settings = db.settings();
   const days = settings.viewerSessionDays || config.viewerSessionDays;
   const token = jwt.sign({ role: 'viewer', pinVersion: settings.pinVersion }, config.jwtSecret, {
     expiresIn: `${days}d`,
@@ -62,7 +61,7 @@ export function attachSession(req, _res, next) {
       const claims = jwt.verify(viewerToken, config.jwtSecret);
       // The version check is what makes a PIN rotation instant: the cookie is
       // cryptographically valid and still refused.
-      if (claims.role === 'viewer' && claims.pinVersion === store.settings().pinVersion) {
+      if (claims.role === 'viewer' && claims.pinVersion === req.db.settings().pinVersion) {
         req.viewer = true;
       }
     } catch {
@@ -74,7 +73,7 @@ export function attachSession(req, _res, next) {
   if (adminToken) {
     try {
       const claims = jwt.verify(adminToken, config.jwtSecret);
-      const admin = store.findAdmin(claims.sub);
+      const admin = req.db.findAdmin(claims.sub);
       if (admin && admin.isActive) {
         req.admin = admin;
         req.viewer = true; // admins never have to unlock separately
@@ -100,7 +99,7 @@ export function requireAdmin(req, res, next) {
 export function requireMaster(req, res, next) {
   // Role is read fresh from the store, not taken from the token, so a demoted
   // admin loses access immediately instead of when their token expires.
-  const fresh = req.admin ? store.findAdmin(req.admin.id) : null;
+  const fresh = req.admin ? req.db.findAdmin(req.admin.id) : null;
   if (fresh && fresh.role === 'master') return next();
   return res
     .status(403)

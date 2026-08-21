@@ -8,7 +8,6 @@
  * instead of leaving a stale row behind.
  */
 
-import { store } from '../store.js';
 import { periodOf, periodRange } from '../utils.js';
 import { liveEntries } from './ledger.js';
 
@@ -17,8 +16,8 @@ export function currentPeriod() {
 }
 
 /** The plan in force for a member in a given month, or null if none was. */
-export function planFor(memberId, period) {
-  const plans = store
+export function planFor(db, memberId, period) {
+  const plans = db
     .plansFor(memberId)
     .filter((p) => p.effectiveFrom <= period && (p.effectiveTo === null || p.effectiveTo >= period))
     .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1));
@@ -26,13 +25,13 @@ export function planFor(memberId, period) {
 }
 
 /** The plan in force right now. Used by the admin screens. */
-export function currentPlan(memberId) {
-  return planFor(memberId, currentPeriod());
+export function currentPlan(db, memberId) {
+  return planFor(db, memberId, currentPeriod());
 }
 
 /** What a member actually paid towards one month, across every entry. */
-function paidForPeriod(memberId, period) {
-  return liveEntries()
+function paidForPeriod(db, memberId, period) {
+  return liveEntries(db)
     .filter((e) => e.memberId === memberId && e.direction === 'credit')
     .reduce((sum, e) => {
       const hit = (e.allocations || []).filter((a) => a.period === period);
@@ -45,15 +44,15 @@ function paidForPeriod(memberId, period) {
  * Months where collection was switched off are included, marked 'exempt', so
  * the history stays honest rather than silently disappearing.
  */
-export function duesForMember(memberId, upto = currentPeriod()) {
-  const member = store.findMember(memberId);
+export function duesForMember(db, memberId, upto = currentPeriod()) {
+  const member = db.findMember(memberId);
   if (!member) return null;
 
   const periods = periodRange(member.joinedPeriod, upto);
   const months = periods.map((period) => {
-    const plan = planFor(memberId, period);
+    const plan = planFor(db, memberId, period);
     const due = plan && plan.isEnabled ? plan.amount : 0;
-    const paid = paidForPeriod(memberId, period);
+    const paid = paidForPeriod(db, memberId, period);
 
     let status = 'exempt';
     if (due > 0) {
@@ -68,10 +67,10 @@ export function duesForMember(memberId, upto = currentPeriod()) {
   });
 
   const pending = months.filter((m) => m.status === 'unpaid' || m.status === 'partial');
-  const plan = currentPlan(memberId);
+  const plan = currentPlan(db, memberId);
 
   // Anything paid beyond the current month is an advance.
-  const advance = liveEntries()
+  const advance = liveEntries(db)
     .filter((e) => e.memberId === memberId && e.direction === 'credit')
     .flatMap((e) => e.allocations || [])
     .filter((a) => a.period > upto)
@@ -96,27 +95,27 @@ export function duesForMember(memberId, upto = currentPeriod()) {
   };
 }
 
-export function duesForEveryone(upto = currentPeriod()) {
-  return store
+export function duesForEveryone(db, upto = currentPeriod()) {
+  return db
     .activeMembers()
-    .map((m) => duesForMember(m.id, upto))
+    .map((m) => duesForMember(db, m.id, upto))
     .filter(Boolean);
 }
 
 /** Everyone with something outstanding, worst first. */
-export function pendingMembers(upto = currentPeriod()) {
-  return duesForEveryone(upto)
+export function pendingMembers(db, upto = currentPeriod()) {
+  return duesForEveryone(db, upto)
     .filter((d) => d.pendingCount > 0)
     .sort((a, b) => b.pendingCount - a.pendingCount || b.pending - a.pending)
     .map((d) => {
-      const last = store.lastReminderFor(d.memberId);
+      const last = db.lastReminderFor(d.memberId);
       return { ...d, lastRemindedAt: last ? last.sentAt : null };
     });
 }
 
 /** The paid / not-paid board for one month. */
-export function collectionBoard(period = currentPeriod()) {
-  const rows = duesForEveryone(period)
+export function collectionBoard(db, period = currentPeriod()) {
+  const rows = duesForEveryone(db, period)
     .map((d) => {
       const month = d.months.find((m) => m.period === period);
       if (!month) return null;
@@ -151,8 +150,8 @@ export function collectionBoard(period = currentPeriod()) {
  * the credit form fill its own month selection in: a member who owes Rs 200 a
  * month and hands over Rs 600 gets their three oldest unpaid months ticked.
  */
-export function suggestAllocations(memberId, amount) {
-  const dues = duesForMember(memberId);
+export function suggestAllocations(db, memberId, amount) {
+  const dues = duesForMember(db, memberId);
   if (!dues) return [];
 
   const out = [];

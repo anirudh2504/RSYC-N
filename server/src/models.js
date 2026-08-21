@@ -1,10 +1,9 @@
 /**
  * Mongoose schemas.
  *
- * These are not used while the app runs on the in-memory demo store. They are
- * here so that the day MONGODB_URI is set, the collections already have the
- * right shape, indexes and constraints, and nothing in the services or routes
- * has to change.
+ * These define every collection the app uses, with its indexes and the
+ * constraints that keep the ledger honest — one opening balance, whole-rupee
+ * amounts, a master admin that cannot be deleted.
  *
  * Money is a WHOLE NUMBER OF RUPEES everywhere. Rs 200 is 200. Paise are not
  * recorded, and the integer validator below is what keeps it that way.
@@ -30,6 +29,16 @@ const adminSchema = new Schema(
   },
   { timestamps: true },
 );
+
+/**
+ * Exactly one master admin, enforced by the database itself.
+ *
+ * This is what makes the one-time setup route safe. Two requests arriving in
+ * the same instant would both see an empty admin list and both try to found
+ * the club; here the second one simply fails, whatever the application code
+ * believed at the time.
+ */
+adminSchema.index({ role: 1 }, { unique: true, partialFilterExpression: { role: 'master' } });
 
 // The founding master account can never be removed, at any layer.
 adminSchema.pre('deleteOne', { document: true, query: false }, function guard(next) {
@@ -234,7 +243,9 @@ const settingsSchema = new Schema(
     founderContribution: { type: [String], default: [] },
     founderContributionHi: { type: [String], default: [] },
 
-    pinHash: { type: String, required: true },
+    // Empty until the first master admin chooses one during setup. While it is
+    // empty the PIN gate refuses everybody rather than letting anybody in.
+    pinHash: { type: String, default: '' },
     pinVersion: { type: Number, default: 1 },
     pinUpdatedAt: { type: Date, default: null },
     pinUpdatedByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin', default: null },

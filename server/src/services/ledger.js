@@ -8,9 +8,12 @@
  *      itself.
  *   2. Entries are append-only once locked. A mistake is corrected by posting
  *      a reversal that points back at the original, never by editing history.
+ *
+ * Everything here works on `db` — the per-request snapshot — rather than
+ * querying as it goes. Reads are plain arithmetic over arrays. Only the three
+ * functions that create entries touch the database, and those are async.
  */
 
-import { store } from '../store.js';
 import { config } from '../config.js';
 import { nowIso } from '../utils.js';
 
@@ -23,8 +26,8 @@ import { nowIso } from '../utils.js';
  * that is what makes the ledger append-only rather than editable. Excluding the
  * original *and* counting the reversal would subtract the amount twice.
  */
-export function allEntries() {
-  return store.entries();
+export function allEntries(db) {
+  return db.entries();
 }
 
 /**
@@ -32,16 +35,18 @@ export function allEntries() {
  * as a fact about the world — a reversed contribution is not a paid month, and
  * a reversed expense is not money the club spent on an event.
  */
-export function liveEntries() {
-  return store.entries().filter((e) => !e.isReversed);
+export function liveEntries(db) {
+  return db.entries().filter((e) => !e.isReversed);
 }
 
-export function balance() {
-  return allEntries().reduce(
+export function balance(db) {
+  return allEntries(db).reduce(
     (sum, e) => sum + (e.direction === 'credit' ? e.amount : -e.amount),
     0,
   );
 }
+
+/* --- these need no data, only the entry in front of them ------------------ */
 
 /** Newest first, by the date the money moved, then by when it was recorded. */
 export function sortedEntries(list) {
@@ -61,11 +66,13 @@ export function lockAtFor(createdAtIso) {
   ).toISOString();
 }
 
+/* -------------------------------------------------------------------------- */
+
 /** Attaches the names a client needs so the feed never has to look things up. */
-export function decorate(entry) {
-  const member = entry.memberId ? store.findMember(entry.memberId) : null;
-  const admin = store.findAdmin(entry.createdByAdminId);
-  const event = entry.eventId ? store.findEvent(entry.eventId) : null;
+export function decorate(db, entry) {
+  const member = entry.memberId ? db.findMember(entry.memberId) : null;
+  const admin = db.findAdmin(entry.createdByAdminId);
+  const event = entry.eventId ? db.findEvent(entry.eventId) : null;
   return {
     ...entry,
     memberName: member ? member.name : null,
@@ -82,28 +89,28 @@ export function decorate(entry) {
  * balance: a correction made this month shows up in this month's figures, not
  * quietly rewritten into the month it corrects.
  */
-export function monthTotals(period) {
+export function monthTotals(db, period) {
   let credit = 0;
   let debit = 0;
-  allEntries().forEach((e) => {
-    if (!e.occurredOn.startsWith(period)) return;
+  allEntries(db).forEach((e) => {
+    if (!String(e.occurredOn).startsWith(period)) return;
     if (e.direction === 'credit') credit += e.amount;
     else debit += e.amount;
   });
-  return { credit: credit, debit: debit, net: credit - debit };
+  return { credit, debit, net: credit - debit };
 }
 
 /** Total spent against one event, for the event detail page. */
-export function eventSpend(eventId) {
-  return liveEntries()
+export function eventSpend(db, eventId) {
+  return liveEntries(db)
     .filter((e) => e.eventId === eventId && e.direction === 'debit')
     .reduce((sum, e) => sum + e.amount, 0);
 }
 
-export function eventExpenses(eventId) {
+export function eventExpenses(db, eventId) {
   return sortedEntries(
-    liveEntries().filter((e) => e.eventId === eventId && e.direction === 'debit'),
-  ).map(decorate);
+    liveEntries(db).filter((e) => e.eventId === eventId && e.direction === 'debit'),
+  ).map((e) => decorate(db, e));
 }
 
 /**
@@ -111,24 +118,27 @@ export function eventExpenses(eventId) {
  * including the opening balance, adjustments and reversals, so there is exactly
  * one place where a row can be created.
  */
-export function postEntry({
-  direction,
-  kind,
-  amount,
-  memberId = null,
-  payerName = null,
-  allocations = [],
-  reason = null,
-  takenBy = null,
-  note = '',
-  eventId = null,
-  occurredOn = null,
-  reversesEntryId = null,
-  reversalReason = null,
-  adminId,
-}) {
+export async function postEntry(
+  db,
+  {
+    direction,
+    kind,
+    amount,
+    memberId = null,
+    payerName = null,
+    allocations = [],
+    reason = null,
+    takenBy = null,
+    note = '',
+    eventId = null,
+    occurredOn = null,
+    reversesEntryId = null,
+    reversalReason = null,
+    adminId,
+  },
+) {
   const createdAt = nowIso();
-  return store.addEntry({
+  return db.addEntry({
     direction,
     kind,
     amount,
@@ -153,15 +163,15 @@ export function postEntry({
  * Reverses a locked entry. The original stays in the feed, struck through and
  * tagged, and a matching opposite entry cancels it out.
  */
-export function reverseEntry(entryId, reason, adminId) {
-  const original = store.findEntry(entryId);
+export async function reverseEntry(db, entryId, reason, adminId) {
+  const original = db.findEntry(entryId);
   if (!original) return { error: 'That entry no longer exists.' };
   if (original.isReversed) return { error: 'That entry has already been reversed.' };
   if (original.kind === 'opening') return { error: 'The opening balance cannot be reversed.' };
 
-  store.updateEntry(entryId, { isReversed: true, reversalReason: reason });
+  await db.updateEntry(entryId, { isReversed: true, reversalReason: reason });
 
-  const reversal = postEntry({
+  const reversal = await postEntry(db, {
     direction: original.direction === 'credit' ? 'debit' : 'credit',
     kind: 'reversal',
     amount: original.amount,
@@ -180,12 +190,12 @@ export function reverseEntry(entryId, reason, adminId) {
  * codebase. The master admin states what the balance should be, and the system
  * posts an ordinary, visible entry for the difference.
  */
-export function postAdjustment(target, reason, adminId) {
-  const current = balance();
+export async function postAdjustment(db, target, reason, adminId) {
+  const current = balance(db);
   const delta = target - current;
   if (delta === 0) return { error: 'That is already the balance. Nothing to correct.' };
 
-  const entry = postEntry({
+  const entry = await postEntry(db, {
     direction: delta > 0 ? 'credit' : 'debit',
     kind: 'adjustment',
     amount: Math.abs(delta),
@@ -193,5 +203,5 @@ export function postAdjustment(target, reason, adminId) {
     adminId,
   });
 
-  return { entry, delta: delta, previousBalance: current, newBalance: target };
+  return { entry, delta, previousBalance: current, newBalance: target };
 }

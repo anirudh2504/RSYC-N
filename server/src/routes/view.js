@@ -4,7 +4,6 @@
  */
 
 import express from 'express';
-import { store } from '../store.js';
 import { requireViewer } from '../middleware/auth.js';
 import {
   balance,
@@ -21,15 +20,15 @@ const router = express.Router();
 
 router.use(requireViewer);
 
-router.get('/summary', (_req, res) => {
-  const s = store.settings();
+router.get('/summary', async (req, res) => {
+  const s = req.db.settings();
   const period = currentPeriod();
-  const board = collectionBoard(period);
+  const board = collectionBoard(req.db, period);
 
-  const recent = sortedEntries(store.entries()).slice(0, 5).map(decorate);
+  const recent = sortedEntries(req.db.entries()).slice(0, 5).map((e) => decorate(req.db, e));
 
   res.json({
-    balance: balance(),
+    balance: balance(req.db),
     period,
     collection: {
       expected: board.expected,
@@ -37,23 +36,23 @@ router.get('/summary', (_req, res) => {
       paidCount: board.paidCount,
       payableCount: board.payableCount,
     },
-    month: monthTotals(period),
+    month: monthTotals(req.db, period),
     notice: s.notice,
     bankAccountLabel: s.bankAccountLabel,
     upiId: s.upiId,
     paymentPhone: s.paymentPhone,
     whatsappGroupUrl: s.whatsappGroupUrl,
-    memberCount: store.activeMembers().length,
+    memberCount: req.db.activeMembers().length,
     recent,
   });
 });
 
-router.get('/transactions', (req, res) => {
+router.get('/transactions', async (req, res) => {
   const { month, type, memberId, q } = req.query;
   const limit = Math.min(Number(req.query.limit) || 20, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
 
-  let list = sortedEntries(store.entries());
+  let list = sortedEntries(req.db.entries());
 
   if (month) list = list.filter((e) => e.occurredOn.startsWith(String(month)));
   if (type === 'credit' || type === 'debit') list = list.filter((e) => e.direction === type);
@@ -62,7 +61,7 @@ router.get('/transactions', (req, res) => {
   if (q) {
     const needle = String(q).toLowerCase();
     list = list.filter((e) => {
-      const member = e.memberId ? store.findMember(e.memberId) : null;
+      const member = e.memberId ? req.db.findMember(e.memberId) : null;
       return [e.reason, e.note, e.payerName, member ? member.name : '']
         .filter(Boolean)
         .some((t) => String(t).toLowerCase().includes(needle));
@@ -70,7 +69,7 @@ router.get('/transactions', (req, res) => {
   }
 
   const total = list.length;
-  const page = list.slice(offset, offset + limit).map(decorate);
+  const page = list.slice(offset, offset + limit).map((e) => decorate(req.db, e));
 
   res.json({
     entries: page,
@@ -78,8 +77,8 @@ router.get('/transactions', (req, res) => {
     offset,
     limit,
     hasMore: offset + limit < total,
-    balance: balance(),
-    month: month ? monthTotals(String(month)) : null,
+    balance: balance(req.db),
+    month: month ? monthTotals(req.db, String(month)) : null,
   });
 });
 
@@ -88,8 +87,8 @@ router.get('/transactions', (req, res) => {
  * amount, not what anyone has paid, not who is behind. That belongs on the
  * monthly contribution board, not against a person's name in a directory.
  */
-router.get('/members', (_req, res) => {
-  const members = store
+router.get('/members', async (req, res) => {
+  const members = req.db
     .activeMembers()
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -108,31 +107,31 @@ router.get('/members', (_req, res) => {
   });
 });
 
-router.get('/collection', (req, res) => {
-  const s = store.settings();
+router.get('/collection', async (req, res) => {
+  const s = req.db.settings();
   if (!s.showPaidBoard) {
     return res.status(404).json({ error: 'disabled', message: 'This board is switched off.' });
   }
   const period = String(req.query.period || currentPeriod());
-  return res.json(collectionBoard(period));
+  return res.json(collectionBoard(req.db, period));
 });
 
 /** The same event as the open route, but with the club spend attached. */
-router.get('/events/:slug', (req, res) => {
-  const event = store.findEventBySlug(req.params.slug);
+router.get('/events/:slug', async (req, res) => {
+  const event = req.db.findEventBySlug(req.params.slug);
   if (!event) {
     return res.status(404).json({ error: 'not_found', message: 'That event could not be found.' });
   }
   return res.json({
     event,
-    spend: eventSpend(event.id),
-    expenses: eventExpenses(event.id),
+    spend: eventSpend(req.db, event.id),
+    expenses: eventExpenses(req.db, event.id),
   });
 });
 
 /** Months that actually have entries, for the filter dropdown. */
-router.get('/months', (_req, res) => {
-  const months = [...new Set(liveEntries().map((e) => e.occurredOn.slice(0, 7)))].sort().reverse();
+router.get('/months', async (req, res) => {
+  const months = [...new Set(liveEntries(req.db).map((e) => e.occurredOn.slice(0, 7)))].sort().reverse();
   res.json({ months });
 });
 

@@ -21,7 +21,7 @@ import {
   useToast,
 } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
-import { money, onlyDigits, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
+import { currentPeriod, money, onlyDigits, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
 import { uploadImage } from '../../lib/upload.js';
 
 export default function MemberDetail() {
@@ -45,9 +45,17 @@ export default function MemberDetail() {
 
   const m = data.member;
 
+  /**
+   * The amount agreed going forward, which is not always the one in force this
+   * month — a change made now starts next month. Editing the plan has to show
+   * what was last agreed, or an admin who raises it to ₹500 today and reopens
+   * the box tomorrow would see ₹200 and think it never saved.
+   */
+  const agreedPlan = (data.plans || []).find((p) => p.effectiveTo === null) || null;
+
   const openPlan = () => {
-    setAmount(String(m.monthlyAmount));
-    setEnabled(m.isEnabled);
+    setAmount(String(agreedPlan ? agreedPlan.amount : m.monthlyAmount));
+    setEnabled(agreedPlan ? agreedPlan.isEnabled : m.isEnabled);
     setFormError('');
     setPlanOpen(true);
   };
@@ -56,11 +64,18 @@ export default function MemberDetail() {
     setBusy(true);
     setFormError('');
     try {
-      await api.put(`/admin/members/${id}/plan`, {
+      const res = await api.put(`/admin/members/${id}/plan`, {
         isEnabled: enabled,
         amount: Math.round(Number(amount) || 0),
       });
-      toast('Contribution updated', 'ok');
+      // Say when it starts. This month was already announced at the old amount,
+      // so a change usually takes effect from the next one.
+      toast(
+        res.startsNextMonth
+          ? `Contribution updated — starts ${periodLabel(res.effectiveFrom)}`
+          : 'Contribution updated',
+        'ok',
+      );
       setPlanOpen(false);
       reload();
     } catch (err) {
@@ -230,6 +245,15 @@ export default function MemberDetail() {
                 ? 'Dues accrue each month from this amount.'
                 : 'Still a full member of the club. No dues accrue.'}
             </p>
+            {/* A change agreed this month only starts next month, so say so
+                here rather than leaving the old figure looking unchanged. */}
+            {agreedPlan && agreedPlan.effectiveFrom > currentPeriod() ? (
+              <p className="small" style={{ marginTop: 4, fontWeight: 600 }}>
+                {agreedPlan.isEnabled
+                  ? `Changes to ${money(agreedPlan.amount)} from ${periodLabel(agreedPlan.effectiveFrom)}`
+                  : `Comes off the collection list from ${periodLabel(agreedPlan.effectiveFrom)}`}
+              </p>
+            ) : null}
           </div>
           <Button variant="ghost" size="sm" onClick={openPlan}>
             Change

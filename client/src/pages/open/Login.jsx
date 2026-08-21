@@ -16,6 +16,10 @@ export default function Login() {
 
   if (!session.loading && session.isAdmin) return <Navigate to={from} replace />;
 
+  // A club nobody has claimed yet has no account to sign in with. Send them to
+  // the one-time setup instead of a form that cannot possibly work.
+  if (!session.loading && session.setupNeeded) return <Navigate to="/setup" replace />;
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
@@ -72,17 +76,6 @@ export default function Login() {
           </Button>
         </form>
 
-        {session.demoHint ? (
-          <div className="demo-box">
-            <p style={{ fontWeight: 700, color: 'var(--ink)' }}>Demo data — nothing is saved</p>
-            <p>
-              Master <b>{session.demoHint.email}</b> / <b>{session.demoHint.password}</b>
-            </p>
-            <p>
-              Admin <b>{session.demoHint.adminEmail}</b> / <b>{session.demoHint.adminPassword}</b>
-            </p>
-          </div>
-        ) : null}
 
         <div className="center" style={{ marginTop: 20, display: 'grid', gap: 10 }}>
           <Link to="/" className="small">

@@ -11,6 +11,7 @@ import PublicMembers from './pages/open/PublicMembers.jsx';
 import Join from './pages/open/Join.jsx';
 import Unlock from './pages/open/Unlock.jsx';
 import Login from './pages/open/Login.jsx';
+import Setup from './pages/open/Setup.jsx';
 
 import Fund from './pages/viewer/Fund.jsx';
 import Transactions from './pages/viewer/Transactions.jsx';
@@ -102,6 +103,7 @@ export default function App() {
       <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/setup" element={<Setup />} />
 
       {/* ---- viewer: behind the club PIN ----------------------------- */}
       <Route path="/fund" element={viewerPage(<Fund />)} />

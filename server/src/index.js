@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-import { config, isDemo } from './config.js';
+import { config } from './config.js';
+import { connect } from './db.js';
+import { catchAsync, catchAsyncFn } from './lib/asyncRoutes.js';
+import { attachData } from './middleware/data.js';
 import { attachSession } from './middleware/auth.js';
 import openRouter from './routes/open.js';
 import accessRouter from './routes/access.js';
@@ -15,7 +18,7 @@ const app = express();
 // Behind a proxy in production, so req.ip is the real client for rate limiting.
 app.set('trust proxy', 1);
 
-// Photos travel as base64 data URIs, one per request.
+// Photos travel as URLs now, but a data URI is still accepted as a fallback.
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
 app.use(
@@ -25,17 +28,27 @@ app.use(
   }),
 );
 
-app.use(attachSession);
-
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, mode: isDemo ? 'demo' : 'mongodb' });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await connect();
+    res.json({ ok: true, database: 'connected' });
+  } catch (err) {
+    res.status(503).json({ ok: false, database: 'unreachable', message: err.message });
+  }
 });
 
-app.use('/api/open', openRouter);
-app.use('/api/access', accessRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/view', viewRouter);
-app.use('/api/admin', adminRouter);
+/**
+ * Order matters: the data gateway has to exist before the session guards can
+ * read settings or look an admin up.
+ */
+app.use('/api', catchAsyncFn(attachData), catchAsyncFn(attachSession));
+
+// catchAsync keeps a failing request from killing the process — see lib/asyncRoutes.js.
+app.use('/api/open', catchAsync(openRouter));
+app.use('/api/access', catchAsync(accessRouter));
+app.use('/api/auth', catchAsync(authRouter));
+app.use('/api/view', catchAsync(viewRouter));
+app.use('/api/admin', catchAsync(adminRouter));
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'not_found', message: 'No such endpoint.' });
@@ -47,21 +60,39 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'server_error', message: 'Something went wrong on our side.' });
 });
 
-app.listen(config.port, () => {
+/**
+ * Last resort. Anything that escapes a request — a background promise, a
+ * driver event — gets logged instead of stopping the club site.
+ */
+process.on('unhandledRejection', (err) => {
+  console.error('[rsyc] unhandled rejection:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[rsyc] uncaught exception:', err);
+});
+
+async function start() {
   const line = '='.repeat(62);
   console.log(`\n${line}`);
   console.log('  Rav Shekha Ji Yuva Club, Nangla');
-  console.log(`  API listening on http://localhost:${config.port}`);
-  if (isDemo) {
+
+  try {
+    await connect();
+    console.log('  MongoDB connected');
+
+  } catch (err) {
     console.log('');
-    console.log('  Running on IN-MEMORY DUMMY DATA. Nothing is saved.');
-    console.log('  Set MONGODB_URI in server/.env to switch to your cluster.');
-    console.log('');
-    console.log(`  Club PIN        ${config.demoPin}`);
-    console.log(`  Master admin    ${config.masterEmail}  /  ${config.masterPassword}`);
-    console.log(`  Admin           ${config.adminEmail}  /  ${config.adminPassword}`);
-  } else {
-    console.log('  Connected mode: MongoDB');
+    console.log('  !! MongoDB is NOT connected.');
+    console.log(`  !! ${err.message}`);
+    console.log('  !! The API will answer 503 until this is fixed.');
   }
-  console.log(`${line}\n`);
-});
+
+  app.listen(config.port, () => {
+    console.log(`  API listening on http://localhost:${config.port}`);
+    console.log(`${line}\n`);
+  });
+}
+
+start();
+
+export default app;

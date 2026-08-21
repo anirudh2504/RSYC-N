@@ -9,7 +9,6 @@
 
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { store } from '../store.js';
 import { notifyJoinRequest } from '../services/notify.js';
 
 const router = express.Router();
@@ -64,8 +63,8 @@ function openEvent(e) {
   };
 }
 
-router.get('/club', (_req, res) => {
-  const s = store.settings();
+router.get('/club', async (req, res) => {
+  const s = req.db.settings();
   res.json({
     groupName: s.groupName,
     groupNameHi: s.groupNameHi,
@@ -75,8 +74,8 @@ router.get('/club', (_req, res) => {
   });
 });
 
-router.get('/events', (_req, res) => {
-  const events = store
+router.get('/events', async (req, res) => {
+  const events = req.db
     .events()
     .filter((e) => e.isPublished)
     .sort((a, b) => (a.eventDate < b.eventDate ? 1 : -1))
@@ -84,16 +83,16 @@ router.get('/events', (_req, res) => {
   res.json({ events });
 });
 
-router.get('/events/:slug', (req, res) => {
-  const event = store.findEventBySlug(req.params.slug);
+router.get('/events/:slug', async (req, res) => {
+  const event = req.db.findEventBySlug(req.params.slug);
   if (!event || !event.isPublished) {
     return res.status(404).json({ error: 'not_found', message: 'That event could not be found.' });
   }
   return res.json({ event: openEvent(event), spend: null, expenses: [] });
 });
 
-router.get('/about', (_req, res) => {
-  const s = store.settings();
+router.get('/about', async (req, res) => {
+  const s = req.db.settings();
   res.json({
     groupName: s.groupName,
     groupNameHi: s.groupNameHi,
@@ -130,10 +129,10 @@ router.get('/about', (_req, res) => {
  * the club PIN on /api/view/members. This endpoint exists so the village can
  * see who is in the club without being handed everyone's contact details.
  */
-router.get('/members', (_req, res) => {
-  const s = store.settings();
+router.get('/members', async (req, res) => {
+  const s = req.db.settings();
   res.json({
-    members: store
+    members: req.db
       .members()
       .filter((m) => m.status === 'active')
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -157,7 +156,7 @@ const joinLimiter = rateLimit({
   message: { error: 'rate_limited', message: 'Too many requests. Please try again later.' },
 });
 
-router.post('/join-request', joinLimiter, (req, res) => {
+router.post('/join-request', joinLimiter, async (req, res) => {
   const name = String(req.body.name || '').trim();
   const fatherName = String(req.body.fatherName || '').trim();
   const phone = String(req.body.phone || '').trim();
@@ -175,7 +174,7 @@ router.post('/join-request', joinLimiter, (req, res) => {
       .json({ error: 'invalid', message: 'Please enter a 10 digit mobile number.' });
   }
 
-  const settings = store.settings();
+  const settings = req.db.settings();
 
   // What the visitor can send themselves, right now, with no API and no cost.
   const clubPhone = settings.contactPhone;
@@ -189,13 +188,13 @@ router.post('/join-request', joinLimiter, (req, res) => {
 
   // A repeat request from the same number is collapsed rather than rejected,
   // so nobody gets an error for pressing the button twice.
-  const existing = store
+  const existing = req.db
     .joinRequests()
     .find((r) => r.phone === phone && r.status === 'pending');
   if (existing) return res.json({ ok: true, whatsappUrl });
 
-  store.addJoinRequest({ name, fatherName, phone, message });
-  store.addAudit({
+  await req.db.addJoinRequest({ name, fatherName, phone, message });
+  await req.db.addAudit({
     actorAdminId: null,
     action: 'joinrequest.create',
     category: 'join-request',

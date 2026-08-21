@@ -4,13 +4,11 @@ import { useFetch } from '../../context/Session.jsx';
 import {
   Button,
   Card,
-  CardHead,
   ErrorState,
   Field,
   Loading,
   Notice,
   PageHead,
-  Rule,
   useToast,
 } from '../../components/ui.jsx';
 import { money } from '../../lib/format.js';
@@ -441,21 +439,6 @@ export default function Settings() {
         </Button>
       </div>
 
-      <div style={{ margin: '26px 0 12px' }}>
-        <Rule label="Data" />
-      </div>
-
-      <Card>
-        <CardHead title="Demo mode" />
-        <div className="card-pad">
-          <p className="small muted">
-            The app is running on in-memory dummy data. Nothing is written to disk, and every
-            restart rebuilds the same seed. Set <code>MONGODB_URI</code> in <code>server/.env</code>{' '}
-            to switch to your Atlas cluster — the schemas are already written in{' '}
-            <code>server/src/models.js</code>.
-          </p>
-        </div>
-      </Card>
     </>
   );
 }
