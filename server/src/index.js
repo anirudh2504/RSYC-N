@@ -25,12 +25,20 @@ app.set('trust proxy', 1);
 // Photos travel as URLs now, but a data URI is still accepted as a fallback.
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: config.clientOrigin,
-    credentials: true,
-  }),
-);
+/**
+ * CORS, only if it is actually needed.
+ *
+ * The site and the API live on one domain — the browser fetches '/api/...' as
+ * a relative path, and in development Vite proxies that to the API port. Both
+ * cases are same-origin, so CORS never comes into it and no CLIENT_ORIGIN has
+ * to be set or known in advance.
+ *
+ * It matters only if the API is ever moved to a domain of its own. Then set
+ * CLIENT_ORIGIN to the address of the site and this switches itself on.
+ */
+if (config.clientOrigin) {
+  app.use(cors({ origin: config.clientOrigin, credentials: true }));
+}
 
 app.get('/api/health', async (_req, res) => {
   try {
