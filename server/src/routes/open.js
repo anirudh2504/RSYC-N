@@ -9,6 +9,7 @@
 
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import { mongoRateStore } from '../lib/rateStore.js';
 import { notifyJoinRequest } from '../services/notify.js';
 
 const router = express.Router();
@@ -151,6 +152,7 @@ router.get('/members', async (req, res) => {
 const joinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  store: mongoRateStore('join'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many requests. Please try again later.' },

@@ -4,6 +4,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { issueAdminCookie, clearAdminCookie, requireAdmin } from '../middleware/auth.js';
+import { mongoRateStore } from '../lib/rateStore.js';
 import { nowIso } from '../utils.js';
 
 const router = express.Router();
@@ -11,6 +12,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 8,
+  store: mongoRateStore('login'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -35,6 +37,7 @@ const loginLimiter = rateLimit({
 const setupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
+  store: mongoRateStore('setup'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many attempts. Please wait.' },

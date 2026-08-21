@@ -2,9 +2,17 @@
   "name": "rsyc",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Rav Shekha Ji Yuva Club, Nangla — shared fund ledger and club noticeboard",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "install:all": "npm install",
     "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",

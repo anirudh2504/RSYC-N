@@ -11,6 +11,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { config } from '../config.js';
+import { mongoRateStore } from '../lib/rateStore.js';
 import { issueViewerCookie, clearViewerCookie } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -18,6 +19,9 @@ const router = express.Router();
 const unlockLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  // Counted in MongoDB, so the limit still holds once this is deployed
+  // across more than one instance. See lib/rateStore.js.
+  store: mongoRateStore('unlock'),
   /**
    * Count only the wrong guesses.
    *

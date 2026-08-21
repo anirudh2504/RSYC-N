@@ -1,3 +1,7 @@
+import { existsSync } from 'node:fs';
+import path, { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -54,6 +58,25 @@ app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'not_found', message: 'No such endpoint.' });
 });
 
+/**
+ * Serve the built site.
+ *
+ * Only used when one process is doing both jobs — a plain host like Render, or
+ * `npm start` on your own machine. On a host that serves the built files from
+ * its own network (Vercel does) this never runs, and in development Vite serves
+ * them instead. If the build is missing it is skipped, so the API still works.
+ */
+const clientDist = path.resolve(dirname(fileURLToPath(import.meta.url)), '../../client/dist');
+if (existsSync(join(clientDist, 'index.html'))) {
+  // Hashed filenames, so they can be cached hard. index.html must not be.
+  app.use(express.static(clientDist, { index: false, maxAge: '1y' }));
+  app.get('*', (_req, res) => {
+    res.sendFile(join(clientDist, 'index.html'), {
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+  });
+}
+
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error('[rsyc]', err);
@@ -93,6 +116,15 @@ async function start() {
   });
 }
 
-start();
+/**
+ * Only take a port when this file was run directly.
+ *
+ * A serverless host imports the app and handles the network itself; calling
+ * listen() there either crashes or silently holds a port nothing will use.
+ */
+const runDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (runDirectly) start();
 
 export default app;
