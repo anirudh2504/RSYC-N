@@ -5,6 +5,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
+    "build": "node -e \"console.log('rsyc-server: no build step, the API runs from source')\"",
     "dev": "node --watch src/index.js",
     "start": "node src/index.js"
   },
