@@ -5,6 +5,7 @@ import { useFetch } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
 import { EventImage, Icon } from '../../components/Ornaments.jsx';
 import FilePicker from '../../components/FilePicker.jsx';
+import UploadTarget from '../../components/UploadTarget.jsx';
 import {
   Button,
   Card,
@@ -196,6 +197,7 @@ export default function EventEditor() {
           ? 'Shown on the event card and at the top of the event page.'
           : 'No cover yet — the drawn artwork is standing in.'}
       </p>
+      <UploadTarget />
 
       {/* Whether the tile cycles its photos or just sits on the cover. */}
       <Card className="card-pad" style={{ marginTop: 14 }}>

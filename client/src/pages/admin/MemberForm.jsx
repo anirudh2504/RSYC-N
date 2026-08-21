@@ -5,6 +5,7 @@ import { useFetch } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
 import { MemberAvatar } from '../../components/Ornaments.jsx';
 import FilePicker from '../../components/FilePicker.jsx';
+import UploadTarget from '../../components/UploadTarget.jsx';
 import { Button, Card, Field, Notice, PageHead, useToast } from '../../components/ui.jsx';
 import { currentPeriod, money, periodLabel } from '../../lib/format.js';
 import { uploadImage } from '../../lib/upload.js';
@@ -103,6 +104,9 @@ export default function MemberForm() {
                     Remove
                   </Button>
                 ) : null}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <UploadTarget />
               </div>
             </div>
           </div>

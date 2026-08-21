@@ -19,6 +19,7 @@ const CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD || '';
 const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET || '';
 
 export const usingImageHost = Boolean(CLOUD && PRESET);
+export const imageHostName = CLOUD;
 
 /**
  * Shrink, upload, and give back the URL to store.
