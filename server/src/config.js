@@ -27,6 +27,16 @@ export const config = {
   clubName: process.env.CLUB_NAME || 'Rav Shekha Ji Yuva Club, Nangla',
 
   /**
+   * Hostnames photos are allowed to come from. Anything else is refused, so a
+   * bad or copied URL cannot point the site at someone else server.
+   * Comma separated, e.g. res.cloudinary.com
+   */
+  imageHosts: (process.env.IMAGE_HOSTS || 'res.cloudinary.com')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean),
+
+  /**
    * Meta WhatsApp Cloud API. Leave empty and the app simply does not send
    * anything — the join form still works and still offers the visitor a
    * wa.me button, which needs none of this.

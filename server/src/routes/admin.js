@@ -3,6 +3,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { store } from '../store.js';
+import { config } from '../config.js';
 import { requireAdmin, requireMaster } from '../middleware/auth.js';
 import { nowIso, slugify } from '../utils.js';
 import {
@@ -87,11 +88,37 @@ const bad = (res, message) => res.status(400).json({ error: 'invalid', message }
 const MAX_MEMBER_PHOTO_CHARS = 400_000;
 const MAX_EVENT_PHOTO_CHARS = 900_000;
 
+/**
+ * A photo is either a URL on the club's own image host, or — when no host is
+ * configured — an inline data URI.
+ *
+ * Only the configured host is accepted. Taking any https URL the client sent
+ * would let anyone with an admin session point the site at a picture on someone
+ * else's server, which is not something the club should be able to do by
+ * accident.
+ */
 function readImage(value, maxChars) {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
 
   const url = String(value);
+
+  if (/^https:\/\//i.test(url)) {
+    if (!config.imageHosts.length) {
+      return { error: 'No image host is configured on the server.' };
+    }
+    let host;
+    try {
+      host = new URL(url).hostname.toLowerCase();
+    } catch {
+      return { error: 'That image address is not valid.' };
+    }
+    if (!config.imageHosts.includes(host)) {
+      return { error: `Images must be hosted on ${config.imageHosts.join(' or ')}.` };
+    }
+    return url;
+  }
+
   if (!/^data:image\/(jpeg|png|webp);base64,/.test(url)) {
     return { error: 'That photo could not be read. Choose a JPG or PNG.' };
   }

@@ -57,7 +57,9 @@ export default function EventCover({ event, alt }) {
 
   if (frames.length === 1) {
     const only = frames[0];
-    return <EventImage url={only.url} seed={only.seed || event.slug} palette={event.palette} alt={alt} />;
+    return (
+      <EventImage url={only.url} seed={only.seed || event.slug} palette={event.palette} alt={alt} width={480} />
+    );
   }
 
   return (
@@ -73,6 +75,7 @@ export default function EventCover({ event, alt }) {
             seed={frame.seed || event.slug}
             palette={event.palette}
             alt={i === index ? alt : ''}
+            width={480}
           />
         </div>
       ))}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useFetch } from '../../context/Session.jsx';
+import { imageUrl } from '../../lib/upload.js';
 import { MemberAvatar } from '../../components/Ornaments.jsx';
 import { Empty, ErrorState, Loading, PageHead } from '../../components/ui.jsx';
 
@@ -19,7 +20,7 @@ function MemberCard({ member }) {
     <div className="member-card">
       <div className="member-photo">
         {showPhoto ? (
-          <img src={member.photoUrl} alt={member.name} onError={() => setFailed(true)} />
+          <img src={imageUrl(member.photoUrl, { width: 240 })} alt={member.name} loading="lazy" onError={() => setFailed(true)} />
         ) : (
           <MemberAvatar name={member.name} />
         )}

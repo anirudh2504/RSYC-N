@@ -19,7 +19,7 @@ import {
 } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
 import { dateInputValue, money, shortDate } from '../../lib/format.js';
-import { compressImageFile } from '../../lib/image.js';
+import { uploadImage } from '../../lib/upload.js';
 
 const PALETTES = ['Indigo court', 'Holi oxblood', 'Neem green', 'Sandstone', 'Dusk', 'Stepwell blue'];
 
@@ -78,7 +78,7 @@ export default function EventEditor() {
   const setCover = async (file) => {
     setUploading('cover');
     try {
-      const coverUrl = await compressImageFile(file, { size: 1280, quality: 0.7 });
+      const coverUrl = await uploadImage(file, { folder: 'rsyc/events', size: 1280, quality: 0.7 });
       await api.patch(`/admin/events/${id}`, { coverUrl });
       toast('Cover photo set', 'ok');
       reload();
@@ -105,7 +105,7 @@ export default function EventEditor() {
     let added = 0;
     try {
       for (const file of files) {
-        const photoUrl = await compressImageFile(file, { size: 900, quality: 0.7 });
+        const photoUrl = await uploadImage(file, { folder: 'rsyc/events', size: 900, quality: 0.7 });
         await api.post(`/admin/events/${id}/photos`, { photoUrl });
         added += 1;
       }
@@ -121,7 +121,7 @@ export default function EventEditor() {
   const replacePhoto = async (photoId, file) => {
     setUploading(photoId);
     try {
-      const photoUrl = await compressImageFile(file, { size: 900, quality: 0.7 });
+      const photoUrl = await uploadImage(file, { folder: 'rsyc/events', size: 900, quality: 0.7 });
       await api.patch(`/admin/events/${id}/photos/${photoId}`, { photoUrl });
       toast('Photo replaced', 'ok');
       reload();

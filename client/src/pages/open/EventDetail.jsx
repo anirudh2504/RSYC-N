@@ -32,7 +32,7 @@ export default function EventDetail() {
       <BackLink to="/events">All events</BackLink>
 
       <div className="event-hero">
-        <EventImage url={event.coverUrl} seed={event.slug} palette={event.palette} alt={event.title} />
+        <EventImage url={event.coverUrl} seed={event.slug} palette={event.palette} alt={event.title} width={960} />
       </div>
 
       <p className="eyebrow">
@@ -78,7 +78,7 @@ export default function EventDetail() {
                 onClick={() => setLightbox(photo)}
                 aria-label="Open photo"
               >
-                <EventImage url={photo.url} seed={photo.seed} palette={event.palette} alt={photo.caption} />
+                <EventImage url={photo.url} seed={photo.seed} palette={event.palette} alt={photo.caption} width={320} />
               </button>
             ))}
           </div>
@@ -124,7 +124,7 @@ export default function EventDetail() {
           </button>
           <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
             <div style={{ aspectRatio: '1' }}>
-              <EventImage url={lightbox.url} seed={lightbox.seed} palette={event.palette} alt={lightbox.caption} />
+              <EventImage url={lightbox.url} seed={lightbox.seed} palette={event.palette} alt={lightbox.caption} width={900} />
             </div>
           </div>
         </div>

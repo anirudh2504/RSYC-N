@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
+import { imageUrl } from '../../lib/upload.js';
 import { useFetch } from '../../context/Session.jsx';
 import { BackLink } from '../../components/Layout.jsx';
 import { Icon, MemberAvatar } from '../../components/Ornaments.jsx';
@@ -21,7 +22,7 @@ import {
 } from '../../components/ui.jsx';
 import LedgerRow from '../../components/LedgerRow.jsx';
 import { money, periodLabel, periodShort, relativeDays, shortDate } from '../../lib/format.js';
-import { compressImageFile } from '../../lib/image.js';
+import { uploadImage } from '../../lib/upload.js';
 
 export default function MemberDetail() {
   const { id } = useParams();
@@ -73,7 +74,7 @@ export default function MemberDetail() {
     if (!file) return;
     setPhotoBusy(true);
     try {
-      const photoUrl = await compressImageFile(file);
+      const photoUrl = await uploadImage(file, { folder: 'rsyc/members' });
       await api.patch(`/admin/members/${id}`, { photoUrl });
       toast('Photo updated', 'ok');
       reload();
@@ -126,7 +127,7 @@ export default function MemberDetail() {
 
       <div className="photo-pick" style={{ marginBottom: 16 }}>
         <div className="photo-pick-preview">
-          {m.photoUrl ? <img src={m.photoUrl} alt={m.name} /> : <MemberAvatar name={m.name} />}
+          {m.photoUrl ? <img src={imageUrl(m.photoUrl, { width: 200 })} alt={m.name} /> : <MemberAvatar name={m.name} />}
         </div>
 
         <div className="photo-pick-body">

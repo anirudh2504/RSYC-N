@@ -7,7 +7,7 @@ import { MemberAvatar } from '../../components/Ornaments.jsx';
 import FilePicker from '../../components/FilePicker.jsx';
 import { Button, Card, Field, Notice, PageHead, useToast } from '../../components/ui.jsx';
 import { currentPeriod, money, periodLabel } from '../../lib/format.js';
-import { compressImageFile, dataUrlBytes } from '../../lib/image.js';
+import { uploadImage } from '../../lib/upload.js';
 
 /** Four things, as the club asked: name, phone, collection on or off, amount. */
 export default function MemberForm() {
@@ -28,7 +28,7 @@ export default function MemberForm() {
 
   const pickPhoto = async (file) => {
     try {
-      setPhoto(await compressImageFile(file));
+      setPhoto(await uploadImage(file, { folder: 'rsyc/members' }));
       setError('');
     } catch (err) {
       setError(err.message);
@@ -91,8 +91,8 @@ export default function MemberForm() {
               <p className="label">Photo</p>
               <p className="hint" style={{ marginBottom: 8 }}>
                 {photo
-                  ? `Ready — about ${Math.round(dataUrlBytes(photo) / 1024)} KB`
-                  : 'Optional. Squared and shrunk automatically before saving.'}
+                  ? 'Ready. It will be saved with the member.'
+                  : 'Optional. Squared and shrunk automatically before it is uploaded.'}
               </p>
               <div className="wrap">
                 <FilePicker onPick={pickPhoto}>

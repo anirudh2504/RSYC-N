@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useFetch } from '../../context/Session.jsx';
+import { imageUrl } from '../../lib/upload.js';
 import { MemberAvatar, Icon } from '../../components/Ornaments.jsx';
 import { Empty, ErrorState, Loading, PageHead } from '../../components/ui.jsx';
 import { periodLabel } from '../../lib/format.js';
@@ -23,7 +24,7 @@ function MemberCard({ member }) {
     <div className="member-card has-actions">
       <div className="member-photo">
         {showPhoto ? (
-          <img src={member.photoUrl} alt={member.name} onError={() => setFailed(true)} />
+          <img src={imageUrl(member.photoUrl, { width: 240 })} alt={member.name} loading="lazy" onError={() => setFailed(true)} />
         ) : (
           <MemberAvatar name={member.name} />
         )}

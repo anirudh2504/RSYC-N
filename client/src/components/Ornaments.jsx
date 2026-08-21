@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { imageUrl } from '../lib/upload.js';
+
 /**
  * Hand-drawn SVG motifs.
  *
@@ -183,11 +185,15 @@ export function EventArt({ seed, palette = 0, className }) {
  * drawn panel. Seeded events and any event without photos keep their artwork,
  * so the galleries are never empty and a broken file never leaves a gap.
  */
-export function EventImage({ url, seed, palette = 0, alt = '' }) {
+export function EventImage({ url, seed, palette = 0, alt = '', width }) {
   const [failed, setFailed] = useState(false);
 
   if (url && !failed) {
-    return <img src={url} alt={alt} onError={() => setFailed(true)} />;
+    // Ask the image host for the size this spot actually needs, rather than
+    // pulling the full upload every time.
+    return (
+      <img src={imageUrl(url, { width })} alt={alt} loading="lazy" onError={() => setFailed(true)} />
+    );
   }
   return <EventArt seed={seed} palette={palette} />;
 }
