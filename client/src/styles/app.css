@@ -1159,6 +1159,71 @@
   padding: 12px 14px 14px;
 }
 
+/* ---- cross-fading cover on an event tile ---- */
+.slideshow {
+  position: absolute;
+  inset: 0;
+}
+
+.slideshow-frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.slideshow-frame.is-on {
+  opacity: 1;
+}
+
+.slideshow-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.slideshow-frame svg,
+.portrait-frame svg,
+.member-photo svg,
+.photo-pick-preview svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.slideshow-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.slideshow-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-full);
+  background: rgba(253, 246, 232, 0.45);
+  box-shadow: 0 0 3px rgba(20, 16, 8, 0.6);
+  transition: background 0.3s ease, width 0.3s ease;
+}
+
+.slideshow-dot.is-on {
+  width: 14px;
+  background: var(--saffron);
+}
+
+/* Someone who asked for less motion gets the first frame and nothing else. */
+@media (prefers-reduced-motion: reduce) {
+  .slideshow-frame {
+    transition: none;
+  }
+}
+
 /* Admin-only footer strip on an event tile, holding the delete button. */
 .tile-actions {
   display: flex;
@@ -1173,6 +1238,7 @@
   font-family: var(--display);
   font-size: var(--t-lg);
   line-height: 1.15;
+  transition: color 0.18s ease;
 }
 
 .event-title-hi {
@@ -1244,7 +1310,7 @@
 .lightbox-inner img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1619,6 +1685,179 @@
 }
 
 /* ==========================================================================
+   Letterbox mat
+
+   Photographs are shown whole rather than cropped, so a portrait picture in a
+   wide frame leaves bars at the sides. These give those bars a deliberate
+   colour instead of a hole.
+   ========================================================================== */
+
+.event-cover,
+.event-hero,
+.gallery-item,
+.member-photo,
+.portrait-frame,
+.photo-pick-preview {
+  background: var(--surface-3);
+}
+
+.lightbox-inner {
+  background: rgba(12, 10, 6, 0.9);
+}
+
+/* ==========================================================================
+   Hover
+
+   Only where a real pointer exists. On a touch screen a :hover state sticks
+   after a tap and the card looks stuck, so the whole block is gated. Everything
+   here is also switched off by the reduced-motion rule in theme.css.
+   ========================================================================== */
+
+@media (hover: hover) and (pointer: fine) {
+  .card,
+  .event-card,
+  .member-card,
+  .stat,
+  .join-card,
+  .photo-pick {
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .card:hover,
+  .stat:hover,
+  .photo-pick:hover {
+    box-shadow: var(--shadow);
+    border-color: var(--brass-soft);
+  }
+
+  /* a tile you can open lifts; a plain panel only warms up */
+  .event-card:hover,
+  .member-card:hover,
+  .join-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--brass);
+  }
+
+  .event-card .event-cover img,
+  .event-card .event-cover svg,
+  .member-card .member-photo img,
+  .member-card .member-photo svg {
+    transition: transform 0.4s ease;
+  }
+
+  .event-card:hover .event-cover img,
+  .event-card:hover .event-cover svg,
+  .member-card:hover .member-photo img,
+  .member-card:hover .member-photo svg {
+    transform: scale(1.045);
+  }
+
+  .event-card:hover .event-title {
+    color: var(--royal);
+  }
+
+  .gallery-item {
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .gallery-item:hover {
+    transform: scale(1.03);
+    border-color: var(--brass);
+  }
+
+  .list-row,
+  .ledger-row,
+  .check-row,
+  .month-cell {
+    transition: background 0.15s ease;
+  }
+
+  a.list-row:hover,
+  .month-cell:hover {
+    background: var(--surface-2);
+  }
+
+  .btn {
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.15s ease,
+      filter 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    filter: brightness(1.06);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+    filter: none;
+  }
+
+  .tag,
+  .chip {
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  button.tag:hover {
+    border-color: var(--brass);
+    color: var(--ink);
+  }
+
+  .navitem {
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .navitem:hover {
+    color: var(--royal);
+    background: var(--surface-2);
+  }
+
+  .brand {
+    transition: opacity 0.15s ease;
+  }
+
+  .brand:hover {
+    opacity: 0.88;
+  }
+
+  .back-link {
+    transition: gap 0.15s ease;
+  }
+
+  .back-link:hover {
+    gap: 10px;
+  }
+
+  .sheet-item {
+    transition: background 0.15s ease;
+  }
+
+  .sheet-item:hover {
+    background: var(--surface-2);
+  }
+
+  .lang-switch button:hover:not(.on),
+  .segmented button:hover {
+    color: var(--ink);
+  }
+
+  .photo-remove:hover {
+    background: var(--debit);
+  }
+
+  .reveal-btn:hover {
+    color: var(--royal);
+  }
+}
+
+/* ==========================================================================
    Reveal toggle — used on the club PIN, exactly like a password field
    ========================================================================== */
 
@@ -1715,11 +1954,10 @@
   box-shadow: var(--shadow-sm);
 }
 
-.portrait-frame img,
-.portrait-frame svg {
+.portrait-frame img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1814,11 +2052,10 @@
   overflow: hidden;
 }
 
-.member-photo img,
-.member-photo svg {
+.member-photo img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1906,11 +2143,10 @@
   background: var(--surface-3);
 }
 
-.photo-pick-preview img,
-.photo-pick-preview svg {
+.photo-pick-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -2194,10 +2430,6 @@
 
   .page-title {
     font-size: var(--t-3xl);
-  }
-
-  .card:hover {
-    box-shadow: var(--shadow);
   }
 
   .toast-wrap {

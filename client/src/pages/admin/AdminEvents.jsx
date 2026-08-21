@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { useFetch } from '../../context/Session.jsx';
-import { EventImage, Icon } from '../../components/Ornaments.jsx';
+import { Icon } from '../../components/Ornaments.jsx';
+import EventCover from '../../components/EventCover.jsx';
 import {
   Button,
   Confirm,
@@ -33,12 +34,7 @@ function EventTile({ event, onDelete }) {
     <div className="event-card">
       <Link to={`/admin/events/${event.id}`}>
         <div className="event-cover">
-          <EventImage
-            url={event.coverUrl}
-            seed={event.slug}
-            palette={event.palette}
-            alt={event.title}
-          />
+          <EventCover event={event} alt={event.title} />
           <div className="event-date-badge">
             <div className="d num">{date.getDate()}</div>
             <div className="m">{dayMonth(event.eventDate).split(' ')[1]}</div>

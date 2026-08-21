@@ -616,10 +616,19 @@ router.post('/reminders', (req, res) => {
 // ------------------------------------------------------------------- events
 router.get('/events', (_req, res) => {
   res.json({
+    // Tiles show a cover and a count, so the full gallery is left out here —
+    // the editor fetches one event in full when it needs the photos. An event
+    // with the slideshow on sends a few frames, the same as the public list.
     events: store
       .events()
       .sort((a, b) => (a.eventDate < b.eventDate ? 1 : -1))
-      .map((e) => ({ ...e, photoCount: e.photos.length })),
+      .map(({ photos, ...e }) => ({
+        ...e,
+        photoCount: photos.length,
+        slideshow: e.autoSwipe
+          ? photos.slice(0, 6).map((p) => ({ id: p.id, url: p.url || null, seed: p.seed || '' }))
+          : [],
+      })),
   });
 });
 
@@ -673,6 +682,7 @@ router.patch('/events/:id', (req, res) => {
   if (Array.isArray(req.body.tags)) patch.tags = req.body.tags.slice(0, 6);
   if (req.body.palette !== undefined) patch.palette = Number(req.body.palette) || 0;
   if (req.body.isPublished !== undefined) patch.isPublished = !!req.body.isPublished;
+  if (req.body.autoSwipe !== undefined) patch.autoSwipe = !!req.body.autoSwipe;
 
   const cover = readEventPhoto(req.body.coverUrl);
   if (cover && cover.error) return bad(res, cover.error);

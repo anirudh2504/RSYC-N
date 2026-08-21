@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFetch, useSession } from '../../context/Session.jsx';
-import { EventImage, Icon } from '../../components/Ornaments.jsx';
+import { Icon } from '../../components/Ornaments.jsx';
+import EventCover from '../../components/EventCover.jsx';
 import { Card, Empty, ErrorState, Loading } from '../../components/ui.jsx';
 import { dayMonth } from '../../lib/format.js';
 
@@ -17,7 +18,7 @@ function EventCard({ event }) {
   return (
     <Link to={`/events/${event.slug}`} className="event-card">
       <div className="event-cover">
-        <EventImage url={event.coverUrl} seed={event.slug} palette={event.palette} alt={event.title} />
+        <EventCover event={event} alt={event.title} />
         <div className="event-date-badge">
           <div className="d num">{date.getDate()}</div>
           <div className="m">{dayMonth(event.eventDate).split(' ')[1]}</div>

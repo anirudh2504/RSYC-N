@@ -136,6 +136,8 @@ const eventSchema = new Schema(
     tags: { type: [String], default: [] },
     palette: { type: Number, default: 0 },
     coverUrl: { type: String, default: '' },
+    // Cycle the cover and gallery on the event tile instead of a still cover.
+    autoSwipe: { type: Boolean, default: false },
     photos: { type: [photoSchema], default: [] },
     isPublished: { type: Boolean, default: false },
     createdByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin' },

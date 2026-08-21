@@ -90,6 +90,7 @@ const EVENTS = [
       'The club marks the birth anniversary of Rao Shekha Ji every year at the village chaupal. This year the day opened with a prabhat pheri through Nangla, followed by a shobha yatra, a talk on the history of Shekhawati for the schoolchildren, and prasad served to roughly four hundred people. The pandal, sound system and prasad were paid for out of the club fund.',
     photos: 6,
     palette: 0,
+    autoSwipe: true,
   },
   {
     id: 'evt_holi',
@@ -103,6 +104,7 @@ const EVENTS = [
       'The whole village gathered at the club ground the evening after Dhulandi. Chang and dhol from the older members, a fagun geet competition that ran far longer than planned, and thandai for everyone. The club covered decorations, the sound system and refreshments.',
     photos: 5,
     palette: 1,
+    autoSwipe: true,
   },
   {
     id: 'evt_raktdaan',
@@ -449,6 +451,7 @@ export function buildSeed() {
     tags: e.tags,
     palette: e.palette,
     coverUrl: '',
+    autoSwipe: e.autoSwipe || false,
     photos: Array.from({ length: e.photos }, (_, i) => ({
       id: `${e.id}_p${i + 1}`,
       seed: `${e.id}-${i}`,

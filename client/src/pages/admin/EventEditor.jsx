@@ -47,6 +47,7 @@ export default function EventEditor() {
       tags: (e.tags || []).join(', '),
       palette: e.palette || 0,
       isPublished: e.isPublished,
+      autoSwipe: !!e.autoSwipe,
     });
   }, [data]);
 
@@ -195,6 +196,47 @@ export default function EventEditor() {
           ? 'Shown on the event card and at the top of the event page.'
           : 'No cover yet — the drawn artwork is standing in.'}
       </p>
+
+      {/* Whether the tile cycles its photos or just sits on the cover. */}
+      <Card className="card-pad" style={{ marginTop: 14 }}>
+        <div className="row-between" style={{ gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontWeight: 700 }}>Slide through photos on the tile</p>
+            <p className="small muted">
+              {form.autoSwipe
+                ? 'The cover and the first few photos fade one into the next, everywhere this event appears as a tile.'
+                : 'Only the cover photo is shown on the tile.'}
+            </p>
+          </div>
+          <div className="segmented" style={{ flex: 'none', width: 132 }}>
+            <button
+              type="button"
+              className={form.autoSwipe ? 'on-credit' : ''}
+              onClick={() => setForm((f) => ({ ...f, autoSwipe: true }))}
+            >
+              On
+            </button>
+            <button
+              type="button"
+              className={!form.autoSwipe ? 'on-debit' : ''}
+              onClick={() => setForm((f) => ({ ...f, autoSwipe: false }))}
+            >
+              Off
+            </button>
+          </div>
+        </div>
+
+        {form.autoSwipe ? (
+          <p className="hint" style={{ marginTop: 10 }}>
+            Up to 6 photos are sent with the tile, so the events list costs more data to load.
+            Worth it for one or two events, not for every one.
+          </p>
+        ) : null}
+
+        {form.autoSwipe !== event.autoSwipe ? (
+          <Notice kind="warn">Press “Save details” below to keep this change.</Notice>
+        ) : null}
+      </Card>
 
       {/* ---------------- photos ---------------- */}
       <div style={{ margin: '26px 0 12px' }}>

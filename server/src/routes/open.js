@@ -14,7 +14,40 @@ import { notifyJoinRequest } from '../services/notify.js';
 
 const router = express.Router();
 
-/** The only shape an event takes on the open side. No spend, ever. */
+/** How many pictures a slideshow tile is allowed to pull down. */
+const SLIDESHOW_LIMIT = 6;
+
+/**
+ * The card shape, for the events list.
+ *
+ * Deliberately does NOT carry the gallery. Photos are stored as data URIs, so
+ * sending every photo of every event just to draw a grid of covers would cost
+ * the village megabytes on a phone. Only an event with the slideshow switched
+ * on sends extra frames, and only a few of them.
+ */
+function openEventCard(e) {
+  const slideshow = e.autoSwipe
+    ? (e.photos || [])
+        .slice(0, SLIDESHOW_LIMIT)
+        .map((p) => ({ id: p.id, url: p.url || null, seed: p.seed || '' }))
+    : [];
+
+  return {
+    id: e.id,
+    slug: e.slug,
+    title: e.title,
+    titleHi: e.titleHi,
+    eventDate: e.eventDate,
+    tags: e.tags,
+    palette: e.palette,
+    coverUrl: e.coverUrl || '',
+    autoSwipe: !!e.autoSwipe,
+    slideshow,
+    photoCount: (e.photos || []).length,
+  };
+}
+
+/** The full shape, for one event's own page. No spend, ever. */
 function openEvent(e) {
   return {
     id: e.id,
@@ -26,6 +59,7 @@ function openEvent(e) {
     tags: e.tags,
     palette: e.palette,
     coverUrl: e.coverUrl || '',
+    autoSwipe: !!e.autoSwipe,
     photos: e.photos,
   };
 }
@@ -46,7 +80,7 @@ router.get('/events', (_req, res) => {
     .events()
     .filter((e) => e.isPublished)
     .sort((a, b) => (a.eventDate < b.eventDate ? 1 : -1))
-    .map(openEvent);
+    .map(openEventCard);
   res.json({ events });
 });
 
