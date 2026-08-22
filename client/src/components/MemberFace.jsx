@@ -23,7 +23,7 @@ export default function MemberFace({ member, size = 38, plain = false }) {
     <span className="avatar" style={{ width: size, height: size }} aria-hidden="true">
       {photo ? (
         <img
-          src={imageUrl(photo, { width: size * 3 })}
+          src={imageUrl(photo, { width: size })}
           alt=""
           loading="lazy"
           onError={() => setFailed(true)}

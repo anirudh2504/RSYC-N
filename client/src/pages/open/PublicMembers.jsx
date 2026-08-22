@@ -20,7 +20,7 @@ function MemberCard({ member }) {
     <div className="member-card">
       <div className="member-photo">
         {showPhoto ? (
-          <img src={imageUrl(member.photoUrl, { width: 240 })} alt={member.name} loading="lazy" onError={() => setFailed(true)} />
+          <img src={imageUrl(member.photoUrl, { width: 320 })} alt={member.name} loading="lazy" onError={() => setFailed(true)} />
         ) : (
           <MemberAvatar name={member.name} />
         )}

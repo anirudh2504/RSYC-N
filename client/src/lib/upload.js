@@ -63,15 +63,34 @@ export async function uploadImage(file, { folder = 'rsyc', ...compressOptions } 
 }
 
 /**
+ * How many real pixels to fetch for each CSS pixel.
+ *
+ * This used to be left to Cloudinary's dpr_auto, which quietly did nothing.
+ * dpr_auto depends on the browser sending a DPR client hint; the page never
+ * opted in with an Accept-CH header, and Safari does not implement the hint at
+ * all — so every iPhone in the village was being sent a 1x image and stretching
+ * it across a 3x screen.
+ *
+ * Asking for 2x outright is not clever, but it is predictable, and it works in
+ * every browser. 2x rather than 3x because the difference between them is very
+ * hard to see and the file is more than twice the size.
+ */
+const PIXEL_RATIO = 2;
+
+/**
  * Ask Cloudinary for the size actually needed at this spot on the page.
  *
- * A member card is ~160px and an event banner is ~880px; serving one file for
- * both wastes most of it. Inserting transformation parameters into the URL
- * gets a right-sized, modern-format image without storing extra copies:
+ * `width` is in CSS pixels — the width the image occupies in the layout. The
+ * screen density is applied here, so callers describe their layout and nothing
+ * else.
  *
- *   c_fit   fit inside the box without cropping — matches object-fit: contain
- *   f_auto  WebP or AVIF where the browser supports it
- *   q_auto  quality chosen per image
+ *   c_limit      fit inside the box, never crop, and never enlarge past the
+ *                original — an upscale on the server just spends bytes to look
+ *                the same as letting the browser stretch it
+ *   f_auto       WebP or AVIF where the browser supports it
+ *   q_auto:good  quality chosen per image, with a floor that keeps faces clean.
+ *                Plain q_auto leans harder on compression, and skin and hair
+ *                are where that shows first
  *
  * Anything that is not a Cloudinary URL — a data URI, a local /images file —
  * passes straight through untouched.
@@ -80,9 +99,9 @@ export function imageUrl(url, { width, height } = {}) {
   if (!url || !width) return url;
   if (!url.includes('/image/upload/')) return url;
 
-  const parts = [`c_fit`, `w_${Math.round(width)}`];
-  if (height) parts.push(`h_${Math.round(height)}`);
-  parts.push('f_auto', 'q_auto', 'dpr_auto');
+  const parts = ['c_limit', `w_${Math.round(width * PIXEL_RATIO)}`];
+  if (height) parts.push(`h_${Math.round(height * PIXEL_RATIO)}`);
+  parts.push('f_auto', 'q_auto:good');
 
   return url.replace('/image/upload/', `/image/upload/${parts.join(',')}/`);
 }

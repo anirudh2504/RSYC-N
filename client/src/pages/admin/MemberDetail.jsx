@@ -142,7 +142,7 @@ export default function MemberDetail() {
 
       <div className="photo-pick" style={{ marginBottom: 16 }}>
         <div className="photo-pick-preview">
-          {m.photoUrl ? <img src={imageUrl(m.photoUrl, { width: 200 })} alt={m.name} /> : <MemberAvatar name={m.name} />}
+          {m.photoUrl ? <img src={imageUrl(m.photoUrl, { width: 96 })} alt={m.name} /> : <MemberAvatar name={m.name} />}
         </div>
 
         <div className="photo-pick-body">

@@ -12,7 +12,20 @@
 
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
 
-export function compressImageFile(file, { size = 512, quality = 0.72 } = {}) {
+/**
+ * `size` is the longest edge kept, and it is the ceiling on how good the photo
+ * can ever look. It used to be 512, which sounded ample next to a tile "about
+ * 160px wide" — but a phone screen has two or three device pixels per CSS
+ * pixel, so that tile really wants ~580 across, and a portrait squeezed into
+ * 512 on its long edge is only 384 wide. Every member photo was being enlarged
+ * about 2.5x on every screen, which is exactly what soft, mushy photos look
+ * like.
+ *
+ * 1400 covers the largest place a member photo is shown, at 2x, with room to
+ * spare. It costs the admin a slightly bigger upload once; everyone else still
+ * downloads a small version, because Cloudinary resizes per request.
+ */
+export function compressImageFile(file, { size = 1400, quality = 0.86 } = {}) {
   return new Promise((resolve, reject) => {
     if (!file) {
       reject(new Error('No file chosen.'));
