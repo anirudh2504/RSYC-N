@@ -1,15 +1,13 @@
 /**
  * Turning a photo from someone's phone into something small enough to store.
  *
- * A picture straight off a phone camera is 3–8 MB. Member cards render it in a
- * square about 160px wide, so almost all of that is waste — waste that costs
- * the village bandwidth every time the directory loads. This crops to a centred
- * square, scales down, and re-encodes as JPEG, which turns several megabytes
- * into roughly 40 KB.
+ * A picture straight off a phone camera is 3–8 MB. Member cards render it a
+ * couple of hundred pixels wide, so almost all of that is waste — waste that
+ * costs the village bandwidth every time the directory loads. This scales the
+ * whole picture down and re-encodes it as JPEG, turning several megabytes into
+ * roughly 40 KB without cropping anything away.
  *
- * The result is a data URI, stored straight on the member record. That means no
- * upload endpoint, no file storage and no third-party service to sign up for —
- * and it works the same once MongoDB is connected.
+ * The result is a data URI, which upload.js posts on to Cloudinary.
  */
 
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
@@ -38,19 +36,32 @@ export function compressImageFile(file, { size = 512, quality = 0.72 } = {}) {
 
       img.onload = () => {
         try {
-          // Centre-crop to a square, because that is the shape of the card.
-          const side = Math.min(img.width, img.height);
-          const sx = (img.width - side) / 2;
-          const sy = (img.height - side) / 2;
-          const out = Math.min(side, size);
+          /**
+           * Scale the whole photograph down. Do not crop it.
+           *
+           * This used to centre-crop to a square "because that is the shape of
+           * the card". It cost people their heads: a portrait taken on a phone
+           * is 3000x4000, a centred square throws away 500 pixels from the top
+           * and 500 from the bottom, and a standing person's face is in that
+           * top band. Worse, it happened before the upload, so the rest of the
+           * picture was gone for good.
+           *
+           * Nothing needed it, either. The card shows photos with
+           * object-fit: contain and Cloudinary is asked for c_fit — both fit
+           * the image in without cropping. Keep the whole picture and let the
+           * page decide how to present it.
+           */
+          const scale = Math.min(1, size / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
 
           const canvas = document.createElement('canvas');
-          canvas.width = out;
-          canvas.height = out;
+          canvas.width = w;
+          canvas.height = h;
 
           const ctx = canvas.getContext('2d');
           ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
+          ctx.drawImage(img, 0, 0, w, h);
 
           resolve(canvas.toDataURL('image/jpeg', quality));
         } catch {

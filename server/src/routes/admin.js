@@ -434,14 +434,25 @@ router.post('/collect', async (req, res) => {
 });
 
 // ------------------------------------------------------------------ members
+/**
+ * The member list, in the order the club arranged it.
+ *
+ * This used to lead with whoever was furthest behind. That is useful when
+ * chasing dues, but it is not what the board should look like — and the admin
+ * screen has a Pending filter for that job. The order here is the one an admin
+ * set by dragging, and it is the same order the village sees.
+ */
 router.get('/members', async (req, res) => {
-  const dues = duesForEveryone(req.db).sort((a, b) => b.pendingCount - a.pendingCount || a.name.localeCompare(b.name));
+  const dues = duesForEveryone(req.db).sort(
+    (a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name),
+  );
   res.json({
     members: dues.map((d) => ({
       id: d.memberId,
       name: d.name,
       fatherName: d.fatherName,
       phone: d.phone,
+      photoUrl: d.photoUrl,
       joinedPeriod: d.joinedPeriod,
       monthlyAmount: d.monthlyAmount,
       isEnabled: d.isEnabled,
@@ -451,6 +462,27 @@ router.get('/members', async (req, res) => {
     })),
     defaultAmount: req.db.settings().defaultAmount,
   });
+});
+
+/**
+ * Save a new running order after a drag.
+ *
+ * The whole list of ids is sent, not just the one that moved, because moving
+ * one name shifts every name below it. Ids that are not sent keep whatever
+ * position they had — a member added on another phone mid-drag is not thrown
+ * to the top of the board because this request had never heard of them.
+ */
+router.put('/members/order', async (req, res) => {
+  const ids = Array.isArray(req.body.ids) ? req.body.ids.map(String) : null;
+  if (!ids || ids.length === 0) return bad(res, 'Send the members in their new order.');
+
+  const known = ids.filter((id) => req.db.findMember(id));
+  if (known.length !== ids.length) return bad(res, 'That list refers to a member who is not in the club.');
+
+  await req.db.reorderMembers(known);
+  audit(req, 'member.reorder', 'Member', `Rearranged the member board (${known.length} members)`);
+
+  return res.json({ ok: true, count: known.length });
 });
 
 router.get('/members/:id', async (req, res) => {
@@ -495,6 +527,9 @@ router.post('/members', async (req, res) => {
     photoUrl: photo || null,
     joinedOn: new Date(`${joinedPeriod}-01T06:00:00.000Z`).toISOString(),
     joinedPeriod,
+    // Joins the bottom of the board. An admin can drag them up if they belong
+    // higher; nobody arrives ahead of the people already there.
+    sortOrder: req.db.nextMemberOrder(),
     createdByAdminId: req.admin.id,
   });
 

@@ -974,6 +974,23 @@
   background: var(--royal-soft);
   color: var(--royal);
   border: 1px solid var(--royal-line);
+  overflow: hidden;
+}
+
+/* A real face when there is one. Cover, not contain — a round frame this small
+   wants to be filled, and a photograph of a person crops to the centre well. */
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The drawn medallion, when there is no photograph. */
+.avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .list-body {
@@ -2047,7 +2064,9 @@
 }
 
 .member-photo {
-  aspect-ratio: 1;
+  /* Taller than wide, because a photograph of a person taken on a phone is
+     taller than wide. A square frame left portraits letterboxed and small. */
+  aspect-ratio: 4 / 5;
   background: var(--surface-3);
   overflow: hidden;
 }
@@ -2455,5 +2474,128 @@
 @media (min-width: 1240px) {
   .main {
     max-width: 940px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Arranging the member board
+   --------------------------------------------------------------------------- */
+
+.reorder {
+  display: block;
+}
+
+.reorder-row {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.reorder-row:last-child {
+  border-bottom: 0;
+}
+
+/* Lifted off the page and following the finger. Left out of the transition
+   below so it tracks the pointer exactly rather than lagging behind it. */
+.reorder-row.is-dragging {
+  z-index: 5;
+  box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.28));
+  border-radius: var(--r-md);
+  border-bottom-color: transparent;
+  background: var(--card-raised, var(--card));
+}
+
+.reorder-row.is-dragging .grip {
+  color: var(--royal);
+}
+
+.grip {
+  flex: none;
+  width: 42px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  cursor: grab;
+  /* Without this the browser claims the gesture for scrolling and the row
+     never moves on a touchscreen. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+.grip svg {
+  width: 20px;
+  height: 20px;
+}
+
+.grip:focus-visible {
+  outline: 2px solid var(--royal);
+  outline-offset: -3px;
+  border-radius: var(--r-sm);
+}
+
+.reorder-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The row inside is already a list-row; stop it drawing a second divider. */
+.reorder-body .list-row {
+  border-bottom: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .grip:hover {
+    color: var(--royal);
+  }
+}
+
+/* A bare icon control, for a card head where a word would be more than the
+   action deserves. Kept to a 40px target so it is comfortable on a phone. */
+.icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: -8px -6px -8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--royal);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover {
+    color: var(--royal);
+    background: var(--royal-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn {
+    transition: none;
   }
 }

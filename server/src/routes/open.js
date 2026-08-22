@@ -136,7 +136,7 @@ router.get('/members', async (req, res) => {
     members: req.db
       .members()
       .filter((m) => m.status === 'active')
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name))
       .map((m) => ({
         id: m.id,
         name: m.name,

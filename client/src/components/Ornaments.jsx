@@ -226,6 +226,16 @@ const stroke = {
 };
 
 export const Icon = {
+  // The handle for dragging a member up or down the board.
+  grip: () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M9 7h.01M15 7h.01M9 12h.01M15 12h.01M9 17h.01M15 17h.01"
+        {...stroke}
+        strokeWidth="2.6"
+      />
+    </svg>
+  ),
   home: () => (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 11.5 12 4l8 7.5" {...stroke} />

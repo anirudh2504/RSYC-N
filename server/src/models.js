@@ -57,6 +57,15 @@ const memberSchema = new Schema(
     joinedPeriod: { type: String, required: true },
     status: { type: String, enum: ['active', 'left'], default: 'active' },
     notes: { type: String, default: '' },
+    /**
+     * Where the member sits on the board, lowest first.
+     *
+     * The club decides this by hand — the founder and the elders belong at the
+     * top, not whoever happens to be alphabetically first. Everyone starts at 0
+     * and ties fall back to the name, so the list is still sensible before
+     * anyone has arranged it.
+     */
+    sortOrder: { type: Number, default: 0, index: true },
     createdByAdminId: { type: Schema.Types.ObjectId, ref: 'Admin' },
   },
   { timestamps: true },

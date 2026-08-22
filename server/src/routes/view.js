@@ -91,7 +91,7 @@ router.get('/members', async (req, res) => {
   const members = req.db
     .activeMembers()
     .slice()
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name));
 
   res.json({
     members: members.map((m) => ({

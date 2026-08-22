@@ -125,6 +125,26 @@ export function makeStore(data) {
       if (member) Object.assign(member, patch);
       return member;
     },
+    /**
+     * Write a whole new running order in one round trip.
+     *
+     * Dragging a name to the top changes the position of everyone below it, so
+     * this is one bulkWrite rather than a request per member — otherwise a
+     * board of thirty would fire thirty writes for a single drag.
+     */
+    reorderMembers: async (orderedIds) => {
+      const ops = orderedIds.map((id, index) => ({
+        updateOne: { filter: { _id: id }, update: { $set: { sortOrder: index } } },
+      }));
+      if (ops.length) await Member.bulkWrite(ops);
+      orderedIds.forEach((id, index) => {
+        const member = store.findMember(id);
+        if (member) member.sortOrder = index;
+      });
+    },
+    /** Where a newly added member goes: the end of the board, not the middle. */
+    nextMemberOrder: () =>
+      data.members.reduce((max, m) => Math.max(max, (m.sortOrder || 0) + 1), 0),
 
     // ---- contribution plans -------------------------------------------------
     plans: () => data.plans,
